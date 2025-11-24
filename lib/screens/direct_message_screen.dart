@@ -2,19 +2,51 @@ import 'package:flutter/material.dart';
 import 'package:grouped_list/grouped_list.dart';
 import 'package:intl/intl.dart';
 
+class DirectMessageArguments {
+  DirectMessageArguments({
+    this.listingTitle,
+    this.sellerName,
+    this.name,
+    this.surname,
+  });
+
+  final String? listingTitle;
+  final String? sellerName;
+  final String? name;
+  final String? surname;
+}
+
 class DirectMessageScreen extends StatelessWidget {
-  const DirectMessageScreen({super.key, required this.name, required this.surname});
-  final name;
-  final surname;
+  const DirectMessageScreen({
+    super.key,
+    this.name,
+    this.surname,
+    this.arguments,
+  });
+
+  final String? name;
+  final String? surname;
+  final DirectMessageArguments? arguments;
+
+  static const routeName = '/direct-message';
+
+  String get _displayName {
+    if (arguments != null) {
+      return arguments!.sellerName ?? arguments!.listingTitle ?? 'Seller';
+    }
+    if (name != null && surname != null) {
+      return '$name $surname';
+    }
+    return name ?? 'Seller';
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(name+ " " + surname)),
+      appBar: AppBar(title: Text(_displayName)),
       body: MessagesScreen(),
     );
   }
-
 }
 
 
