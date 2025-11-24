@@ -5,7 +5,7 @@ import '../widgets/category_card.dart';
 import 'create_listing_screen.dart';
 import 'fridges_screen.dart';
 import 'listing_detail_screen.dart';
-import 'messages/all_messages_screen.dart';
+import 'all_messages_screen.dart';
 import 'notifications_screen.dart';
 
 class HomeScreen extends StatefulWidget {
