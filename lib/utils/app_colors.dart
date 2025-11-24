@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/listing.dart';
 import '../widgets/listing_card.dart';
-import 'listing_detail_screen.dart';
+import '../screens/listing_detail_screen.dart';
 
 class FridgesScreen extends StatelessWidget {
   const FridgesScreen({super.key});
