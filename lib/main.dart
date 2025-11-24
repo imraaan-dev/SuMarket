@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/signup_screen.dart';
 import 'screens/create_listing_screen.dart';
 import 'screens/favorites_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/listing_detail_screen.dart';
-import 'screens/messages/all_messages_screen.dart';
-import 'screens/messages/direct_message_screen.dart';
+import 'screens/all_messages_screen.dart';
+import 'screens/direct_message_screen.dart';
 import 'screens/notifications_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/settings_screen.dart';
@@ -30,6 +31,7 @@ class SuMarketApp extends StatelessWidget {
           brightness: Brightness.light,
         ),
         useMaterial3: true,
+        textTheme: GoogleFonts.poppinsTextTheme(),
       ),
       initialRoute: SplashScreen.routeName,
       routes: {
@@ -49,10 +51,20 @@ class SuMarketApp extends StatelessWidget {
           );
         }
         if (settings.name == DirectMessageScreen.routeName) {
-          final args = settings.arguments as DirectMessageArguments;
-          return MaterialPageRoute(
-            builder: (_) => DirectMessageScreen(arguments: args),
-          );
+          if (settings.arguments is DirectMessageArguments) {
+            final args = settings.arguments as DirectMessageArguments;
+            return MaterialPageRoute(
+              builder: (_) => DirectMessageScreen(arguments: args),
+            );
+          } else if (settings.arguments is Map) {
+            final args = settings.arguments as Map;
+            return MaterialPageRoute(
+              builder: (_) => DirectMessageScreen(
+                name: args['name'] as String?,
+                surname: args['surname'] as String?,
+              ),
+            );
+          }
         }
         return null;
       },
@@ -72,11 +84,11 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = const [
-    HomeScreen(),
-    FavoritesScreen(),
-    NotificationsScreen(),
-    ProfileScreen(),
+  final List<Widget> _screens = [
+    const HomeScreen(),
+    const FavoritesScreen(),
+    const NotificationsScreen(),
+    const ProfileScreen(),
   ];
 
   @override
