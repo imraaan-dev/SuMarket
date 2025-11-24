@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
+import '../models/listing.dart';
+import '../widgets/listing_card.dart';
+import '../widgets/category_card.dart';
+import 'create_listing_screen.dart';
+import 'fridges_screen.dart';
+import 'listing_detail_screen.dart';
+import 'messages/all_messages_screen.dart';
+import 'notifications_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
-  static const routeName = '/home';
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -10,6 +17,64 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
+
+  // Sample data - in a real app, this would come from a backend
+  final List<Listing> _listings = [
+    Listing(
+      id: '1',
+      title: 'Mini Fridge - Excellent Condition',
+      description:
+          'Small fridge perfect for dorm rooms. Works great, selling because I\'m graduating.',
+      price: 800,
+      category: 'Fridges',
+      sellerName: 'Ahmet Y.',
+      sellerId: 'user1',
+      imageUrl: '',
+      postedDate: DateTime.now().subtract(const Duration(hours: 2)),
+      hasDelivery: true,
+      isVerified: true,
+    ),
+    Listing(
+      id: '2',
+      title: 'Calculus Textbook - Like New',
+      description: 'Calculus textbook, barely used. No highlights or notes.',
+      price: 150,
+      category: 'Books',
+      sellerName: 'Zeynep K.',
+      sellerId: 'user2',
+      imageUrl: '',
+      postedDate: DateTime.now().subtract(const Duration(days: 1)),
+      hasDelivery: false,
+      isVerified: true,
+    ),
+    Listing(
+      id: '3',
+      title: 'Study Desk with Drawers',
+      description: 'Wooden study desk in good condition. Easy to assemble.',
+      price: 450,
+      category: 'Furniture',
+      sellerName: 'Can D.',
+      sellerId: 'user3',
+      imageUrl: '',
+      postedDate: DateTime.now().subtract(const Duration(days: 2)),
+      hasDelivery: true,
+      isVerified: false,
+    ),
+    Listing(
+      id: '4',
+      title: 'Coffee Maker',
+      description:
+          'Nespresso machine, comes with pods. Great for early morning classes!',
+      price: 600,
+      category: 'Electronics',
+      sellerName: 'Melis A.',
+      sellerId: 'user4',
+      imageUrl: '',
+      postedDate: DateTime.now().subtract(const Duration(hours: 5)),
+      hasDelivery: false,
+      isVerified: true,
+    ),
+  ];
 
   @override
   void dispose() {
@@ -31,6 +96,24 @@ class _HomeScreenState extends State<HomeScreen> {
             color: Colors.blue.shade700,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const NotificationsScreen(),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.message_outlined),
+            onPressed: () {
+              Navigator.of(context).pushNamed(AllMessagesScreen.routeName);
+            },
+          ),
+        ],
       ),
       body: CustomScrollView(
         slivers: [
@@ -70,6 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+
           // Categories Section
           SliverToBoxAdapter(
             child: Padding(
@@ -90,28 +174,72 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: ListView(
                       scrollDirection: Axis.horizontal,
                       children: [
-                        _CategoryCard(
+                        CategoryCard(
                           title: 'Fridges',
                           icon: Icons.kitchen,
                           color: Colors.blue,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const FridgesScreen(),
+                              ),
+                            );
+                          },
                         ),
                         const SizedBox(width: 12),
-                        _CategoryCard(
+                        CategoryCard(
                           title: 'Books',
                           icon: Icons.book,
                           color: Colors.orange,
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Books category coming soon.'),
+                              ),
+                            );
+                          },
                         ),
                         const SizedBox(width: 12),
-                        _CategoryCard(
+                        CategoryCard(
                           title: 'Electronics',
                           icon: Icons.devices,
                           color: Colors.purple,
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content:
+                                    Text('Electronics category coming soon.'),
+                              ),
+                            );
+                          },
                         ),
                         const SizedBox(width: 12),
-                        _CategoryCard(
+                        CategoryCard(
                           title: 'Furniture',
                           icon: Icons.chair,
                           color: Colors.brown,
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content:
+                                    Text('Furniture category coming soon.'),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 12),
+                        CategoryCard(
+                          title: 'More',
+                          icon: Icons.grid_view,
+                          color: Colors.grey,
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('More categories coming soon.'),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -121,6 +249,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+
           // Listings Section
           SliverToBoxAdapter(
             child: Padding(
@@ -143,71 +272,37 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          // Placeholder for listings
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Center(
-                child: Text(
-                  'Listings will appear here',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-              ),
+
+          // Listings List
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final listing = _listings[index];
+                return ListingCard(
+                  listing: listing,
+                  onTap: () {
+                    Navigator.of(context).pushNamed(
+                      ListingDetailScreen.routeName,
+                      arguments: ListingDetailArguments(listing: listing),
+                    );
+                  },
+                );
+              },
+              childCount: _listings.length,
             ),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.of(context).pushNamed(CreateListingScreen.routeName);
+        },
+        icon: const Icon(Icons.add),
+        label: const Text('Sell Item'),
+        backgroundColor: Colors.blue.shade700,
       ),
     );
   }
 }
 
-class _CategoryCard extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final Color color;
 
-  const _CategoryCard({
-    required this.title,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 100,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            size: 32,
-            color: color,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: color,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-}
