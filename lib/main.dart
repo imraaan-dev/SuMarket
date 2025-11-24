@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
-
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/signup_screen.dart';
+import 'screens/create_listing_screen.dart';
+import 'screens/favorites_screen.dart';
 import 'screens/home_screen.dart';
-import 'screens/all_messages_screen.dart';
+import 'screens/listing_detail_screen.dart';
+import 'screens/messages/all_messages_screen.dart';
+import 'screens/messages/direct_message_screen.dart';
+import 'screens/notifications_screen.dart';
+import 'screens/profile_screen.dart';
+import 'screens/settings_screen.dart';
+import 'screens/splash_screen.dart';
 
 void main() {
   runApp(const SuMarketApp());
@@ -24,13 +31,30 @@ class SuMarketApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      initialRoute: LoginScreen.routeName,
+      initialRoute: SplashScreen.routeName,
       routes: {
-        LoginScreen.routeName: (context) => const LoginScreen(),
-        SignUpScreen.routeName: (context) => const SignUpScreen(),
-        MainNavigation.routeName: (context) => const MainNavigation(),
-        HomeScreen.routeName: (context) => const HomeScreen(),
-        AllMessagesScreen.routeName: (context) => AllMessagesScreen(),
+        SplashScreen.routeName: (_) => const SplashScreen(),
+        LoginScreen.routeName: (_) => const LoginScreen(),
+        SignUpScreen.routeName: (_) => const SignUpScreen(),
+        MainNavigation.routeName: (_) => const MainNavigation(),
+        CreateListingScreen.routeName: (_) => const CreateListingScreen(),
+        SettingsScreen.routeName: (_) => const SettingsScreen(),
+        AllMessagesScreen.routeName: (_) => const AllMessagesScreen(),
+      },
+      onGenerateRoute: (settings) {
+        if (settings.name == ListingDetailScreen.routeName) {
+          final args = settings.arguments as ListingDetailArguments;
+          return MaterialPageRoute(
+            builder: (_) => ListingDetailScreen(arguments: args),
+          );
+        }
+        if (settings.name == DirectMessageScreen.routeName) {
+          final args = settings.arguments as DirectMessageArguments;
+          return MaterialPageRoute(
+            builder: (_) => DirectMessageScreen(arguments: args),
+          );
+        }
+        return null;
       },
     );
   }
@@ -50,7 +74,9 @@ class _MainNavigationState extends State<MainNavigation> {
 
   final List<Widget> _screens = const [
     HomeScreen(),
-    _PlaceholderScreen(), // Placeholder until teammates add screens
+    FavoritesScreen(),
+    NotificationsScreen(),
+    ProfileScreen(),
   ];
 
   @override
@@ -72,9 +98,19 @@ class _MainNavigationState extends State<MainNavigation> {
             label: 'Home',
           ),
           NavigationDestination(
-            icon: Icon(Icons.more_horiz),
-            selectedIcon: Icon(Icons.more_horiz),
-            label: 'More',
+            icon: Icon(Icons.favorite_outline),
+            selectedIcon: Icon(Icons.favorite),
+            label: 'Favorites',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.notifications_outlined),
+            selectedIcon: Icon(Icons.notifications),
+            label: 'Notifications',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: 'Profile',
           ),
         ],
       ),
@@ -82,15 +118,4 @@ class _MainNavigationState extends State<MainNavigation> {
   }
 }
 
-class _PlaceholderScreen extends StatelessWidget {
-  const _PlaceholderScreen();
 
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('More screens coming soon'),
-      ),
-    );
-  }
-}
