@@ -1,116 +1,89 @@
 import 'package:flutter/material.dart';
 
-class NotificationsScreen extends StatelessWidget {
-  const NotificationsScreen({super.key});
-
-  static const routeName = '/notifications';
-
-  List<_NotificationItem> get _notifications => [
-        _NotificationItem(
-          title: 'New item added near you',
-          subtitle: 'MacBook Air 2022 - Sabancı University',
-          icon: Icons.local_offer_outlined,
-          timeAgo: '2h ago',
-          unread: true,
-        ),
-        _NotificationItem(
-          title: 'New message',
-          subtitle: 'Someone is interested in your bike',
-          icon: Icons.message_outlined,
-          timeAgo: '5h ago',
-          unread: true,
-        ),
-        _NotificationItem(
-          title: 'Price drop alert',
-          subtitle: 'Engineering Textbooks now ₺250',
-          icon: Icons.price_change_outlined,
-          timeAgo: '1d ago',
-        ),
-        _NotificationItem(
-          title: 'Item sold',
-          subtitle: 'Your Wireless Mouse has been sold',
-          icon: Icons.check_circle_outline,
-          timeAgo: '2d ago',
-        ),
-        _NotificationItem(
-          title: 'Someone liked your item',
-          subtitle: 'Your desk lamp was added to favorites',
-          icon: Icons.favorite_border,
-          timeAgo: '3d ago',
-        ),
-      ];
+class ProfileScreen extends StatelessWidget {
+  const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifications'),
-        actions: [
-          TextButton(
-            onPressed: () {},
-            child: const Text('Mark all as read'),
-          ),
-        ],
+        title: const Text('Profile'),
       ),
-      body: ListView.separated(
+      body: ListView(
         padding: const EdgeInsets.all(16),
-        itemBuilder: (context, index) {
-          final notification = _notifications[index];
-          return ListTile(
-            contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-            tileColor: notification.unread
-                ? Theme.of(context).colorScheme.primary.withOpacity(0.06)
-                : null,
+        children: [
+          // Profile Header
+          Card(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            leading: CircleAvatar(
-              backgroundColor:
-                  Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              child: Icon(notification.icon,
-                  color: Theme.of(context).colorScheme.primary),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    child: Icon(
+                      Icons.person,
+                      size: 50,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Student Name',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'student@su.edu.tr',
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            title: Text(
-              notification.title,
-              style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 16),
+          // Menu Items
+          Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Column(
               children: [
-                const SizedBox(height: 4),
-                Text(notification.subtitle),
-                const SizedBox(height: 6),
-                Text(
-                  notification.timeAgo,
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                ListTile(
+                  leading: const Icon(Icons.favorite_outline),
+                  title: const Text('My Favorites'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {},
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.sell_outlined),
+                  title: const Text('My Listings'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {},
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.settings_outlined),
+                  title: const Text('Settings'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.of(context).pushNamed('/settings');
+                  },
                 ),
               ],
             ),
-            trailing: notification.unread
-                ? const Icon(Icons.circle, size: 10, color: Colors.blue)
-                : null,
-            onTap: () {},
-          );
-        },
-        separatorBuilder: (context, index) => const SizedBox(height: 12),
-        itemCount: _notifications.length,
+          ),
+        ],
       ),
     );
   }
-}
-
-class _NotificationItem {
-  _NotificationItem({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.timeAgo,
-    this.unread = false,
-  });
-
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final String timeAgo;
-  final bool unread;
 }
