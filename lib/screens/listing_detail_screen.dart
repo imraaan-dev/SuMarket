@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/listing.dart';
-import 'messages/direct_message_screen.dart';
+import 'direct_message_screen.dart';
 
 class ListingDetailArguments {
   ListingDetailArguments({required this.listing});
