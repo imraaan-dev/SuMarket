@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'auth/login_screen.dart';
 
 // Pulsing loader widget
 class _PulsingLoader extends StatefulWidget {
@@ -51,14 +52,16 @@ class _PulsingLoaderState extends State<_PulsingLoader>
   }
 }
 
-class SplashPage extends StatefulWidget {
-  const SplashPage({super.key});
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  static const routeName = '/';
 
   @override
-  State<SplashPage> createState() => _SplashPageState();
+  State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashPageState extends State<SplashPage>
+class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
@@ -102,7 +105,7 @@ class _SplashPageState extends State<SplashPage>
     
     _navigationTimer = Timer(Duration(milliseconds: 2500), () {
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/login');
+        Navigator.pushReplacementNamed(context, LoginScreen.routeName);
       }
     });
   }
