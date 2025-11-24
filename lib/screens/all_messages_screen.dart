@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:su_fridges/screens/direct_message_screen.dart';
+import 'direct_message_screen.dart';
 
 
 class DMPreview {
@@ -15,7 +15,7 @@ class DMPreview {
 
 
 class AllMessagesScreen extends StatefulWidget {
-  AllMessagesScreen({super.key});
+  const AllMessagesScreen({super.key});
   static const routeName = '/main/all-messages';
 
   @override
@@ -27,38 +27,61 @@ class _AllMessagesScreenState extends State<AllMessagesScreen> {
     //this will be later fetched from a seperate messages document in the database
     DMPreview("Imran", "Hasanzade", "this is the message preivew"),
     DMPreview("Mazen", "Zeybek", "this is the message preivew"),
-
-
   ];
-  
+
+  void _removeMessage(int index) {
+    setState(() {
+      dmPreviews.removeAt(index);
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Message removed'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("All Messages")),
-      body: ListView.builder(
-        itemCount: dmPreviews.length,
-        itemBuilder: (context, index) {
-          return Card(
-            child: ListTile(
-              leading: CircleAvatar(
-                child: Text(dmPreviews[index].name[0]),
-              ),
-              onTap:  () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute( builder: (context) => DirectMessageScreen(
-                        name: dmPreviews[index].name, surname: dmPreviews[index].surname
-                    )));
+      appBar: AppBar(title: const Text("All Messages")),
+      body: dmPreviews.isEmpty
+          ? const Center(
+              child: Text('No messages yet'),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(8),
+              itemCount: dmPreviews.length,
+              itemBuilder: (context, index) {
+                return Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      child: Text(dmPreviews[index].name[0]),
+                    ),
+                    title: Text("${dmPreviews[index].name} ${dmPreviews[index].surname}"),
+                    subtitle: Text(dmPreviews[index].messagePreview),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                      onPressed: () => _removeMessage(index),
+                      tooltip: 'Remove message',
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DirectMessageScreen(
+                            name: dmPreviews[index].name,
+                            surname: dmPreviews[index].surname,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                );
               },
-              title: Text("${dmPreviews[index].name} ${dmPreviews[index].surname}"),
-              subtitle: Text(dmPreviews[index].messagePreview),
-
             ),
-          );
-        },
-      ),
-
-    );;
+    );
   }
 }
 
