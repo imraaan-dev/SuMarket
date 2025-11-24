@@ -32,6 +32,27 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         const SnackBar(content: Text('Listing saved (mock).')),
       );
       Navigator.of(context).pop();
+    } else {
+      // Show AlertDialog when validation fails
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Validation Error'),
+            content: const Text(
+              'Please fill in all required fields correctly before submitting.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
     }
   }
 
