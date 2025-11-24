@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:su_fridges/screens/direct_message_screen.dart';
 
 
 class DMPreview {
 
-  final String? name;
-  final String? surname;
-  final String? messagePreview;
+  final String name;
+  final String surname;
+  final String messagePreview;
 
-  DMPreview({this.name, this.surname, this.messagePreview});
+  DMPreview(this.name, this.surname, this.messagePreview);
 }
-//temporary: for now we are just making a demo list of these, later API will give json to populate the state
-DMPreview prv1 = DMPreview(name: "Imran", surname: "Hasanzade", messagePreview: "this is the message preivew");
-DMPreview prv2 = DMPreview(name: "Aaaaa", surname: "BBBbb", messagePreview: "this is the message preivew");
-DMPreview prv3 = DMPreview(name: "Ccccc", surname: "DDdddd", messagePreview: "this is the message preivew");
+
 
 
 
@@ -25,7 +23,13 @@ class AllMessagesScreen extends StatefulWidget {
 }
 
 class _AllMessagesScreenState extends State<AllMessagesScreen> {
-  List<DMPreview> dmPreviews = [prv1, prv2, prv3];
+  List<DMPreview> dmPreviews = [
+    //this will be later fetched from a seperate messages document in the database
+    DMPreview("Imran", "Hasanzade", "this is the message preivew"),
+    DMPreview("Mazen", "Zeybek", "this is the message preivew"),
+
+
+  ];
   
   @override
   Widget build(BuildContext context) {
@@ -34,10 +38,20 @@ class _AllMessagesScreenState extends State<AllMessagesScreen> {
       body: ListView.builder(
         itemCount: dmPreviews.length,
         itemBuilder: (context, index) {
-          Card(
+          return Card(
             child: ListTile(
-              onTap:  () {print("tapped");},
+              leading: CircleAvatar(
+                child: Text(dmPreviews[index].name[0]),
+              ),
+              onTap:  () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute( builder: (context) => DirectMessageScreen(
+                        name: dmPreviews[index].name, surname: dmPreviews[index].surname
+                    )));
+              },
               title: Text("${dmPreviews[index].name} ${dmPreviews[index].surname}"),
+              subtitle: Text(dmPreviews[index].messagePreview),
 
             ),
           );
