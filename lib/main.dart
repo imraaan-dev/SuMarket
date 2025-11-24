@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/signup_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/all_messages_screen.dart';
 
 void main() {
   runApp(const SuMarketApp());
@@ -25,9 +26,11 @@ class SuMarketApp extends StatelessWidget {
       ),
       initialRoute: LoginScreen.routeName,
       routes: {
-        LoginScreen.routeName: (_) => const LoginScreen(),
-        SignUpScreen.routeName: (_) => const SignUpScreen(),
-        MainNavigation.routeName: (_) => const MainNavigation(),
+        LoginScreen.routeName: (context) => const LoginScreen(),
+        SignUpScreen.routeName: (context) => const SignUpScreen(),
+        MainNavigation.routeName: (context) => const MainNavigation(),
+        HomeScreen.routeName: (context) => const HomeScreen(),
+        AllMessagesScreen.routeName: (context) => AllMessagesScreen(),
       },
     );
   }
