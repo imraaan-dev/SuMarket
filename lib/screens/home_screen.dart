@@ -84,6 +84,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth > 600;
+    
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
@@ -94,6 +97,7 @@ class _HomeScreenState extends State<HomeScreen> {
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: Colors.blue.shade700,
+            fontSize: isTablet ? 24 : 20,
           ),
         ),
         actions: [
@@ -120,7 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // Search Bar
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(isTablet ? 24 : 16),
               child: TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
@@ -157,20 +161,20 @@ class _HomeScreenState extends State<HomeScreen> {
           // Categories Section
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(horizontal: isTablet ? 24 : 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Categories',
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: isTablet ? 24 : 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: isTablet ? 16 : 12),
                   SizedBox(
-                    height: 120,
+                    height: isTablet ? 140 : 120,
                     child: ListView(
                       scrollDirection: Axis.horizontal,
                       children: [
@@ -253,14 +257,14 @@ class _HomeScreenState extends State<HomeScreen> {
           // Listings Section
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(horizontal: isTablet ? 24 : 16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Recent Listings',
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: isTablet ? 24 : 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
