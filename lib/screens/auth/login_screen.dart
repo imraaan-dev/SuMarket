@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import '../../main.dart';
-
+import '../../providers/auth_provider.dart';
 import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -26,21 +26,29 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _submit() {
-    if (_formKey.currentState?.validate() ?? false) {
-      Navigator.of(context)
-          .pushNamedAndRemoveUntil(MainNavigation.routeName, (route) => false);
-    }
+  Future<void> _submit() async {
+    final auth = context.read<AuthProvider>();
+    auth.clearError();
+
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    await auth.login(
+      email: _emailController.text,
+      password: _passwordController.text,
+    );
+
+    // ✅ No Navigator push here.
+    // AuthGate in main.dart will automatically show MainNavigation when login succeeds.
   }
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).maybePop(),
-        ),
+        // ✅ Login is usually a top-level screen; don't pop to nowhere / back-stack confusion
+        automaticallyImplyLeading: false,
         title: const Text('Welcome Back'),
         centerTitle: true,
       ),
@@ -59,12 +67,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 icon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  if (!value.contains('@')) {
-                    return 'Enter a valid email address';
-                  }
+                  final v = value?.trim() ?? '';
+                  if (v.isEmpty) return 'Please enter your email';
+                  if (!v.contains('@')) return 'Enter a valid email address';
                   return null;
                 },
               ),
@@ -84,12 +89,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       setState(() => _obscurePassword = !_obscurePassword),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your password';
-                  }
-                  if (value.length < 6) {
+                  final v = value ?? '';
+                  if (v.isEmpty) return 'Please enter your password';
+                  if (v.length < 6)
                     return 'Password must be at least 6 characters';
-                  }
                   return null;
                 },
               ),
@@ -97,16 +100,38 @@ class _LoginScreenState extends State<LoginScreen> {
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-                  onPressed: () {},
+                  onPressed: auth.isLoading
+                      ? null
+                      : () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content:
+                                  Text('Password reset not implemented yet.'),
+                            ),
+                          );
+                        },
                   child: const Text('Forgot password?'),
                 ),
               ),
+              if (auth.error != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  auth.error!,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ],
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _submit,
-                  child: const Text('Login'),
+                  onPressed: auth.isLoading ? null : _submit,
+                  child: auth.isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Login'),
                 ),
               ),
               const SizedBox(height: 16),
@@ -116,8 +141,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     const Text("Don't have an account?"),
                     TextButton(
-                      onPressed: () => Navigator.of(context)
-                          .pushNamed(SignUpScreen.routeName),
+                      onPressed: auth.isLoading
+                          ? null
+                          : () => Navigator.of(context).pushNamed(
+                                SignUpScreen.routeName,
+                              ),
                       child: const Text('Sign Up'),
                     ),
                   ],
@@ -171,4 +199,3 @@ class _InputField extends StatelessWidget {
     );
   }
 }
-

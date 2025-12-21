@@ -1,23 +1,26 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'auth/login_screen.dart';
+
+import '../main.dart'; // ✅ for AuthGate.routeName
 
 // Pulsing loader widget
 class _PulsingLoader extends StatefulWidget {
+  const _PulsingLoader();
+
   @override
   State<_PulsingLoader> createState() => _PulsingLoaderState();
 }
 
 class _PulsingLoaderState extends State<_PulsingLoader>
     with SingleTickerProviderStateMixin {
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
+  late final AnimationController _pulseController;
+  late final Animation<double> _pulseAnimation;
 
   @override
   void initState() {
     super.initState();
     _pulseController = AnimationController(
-      duration: Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 1000),
       vsync: this,
     )..repeat(reverse: true);
 
@@ -42,7 +45,7 @@ class _PulsingLoaderState extends State<_PulsingLoader>
       builder: (context, child) {
         return Opacity(
           opacity: _pulseAnimation.value,
-          child: CircularProgressIndicator(
+          child: const CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
             strokeWidth: 3,
           ),
@@ -55,7 +58,7 @@ class _PulsingLoaderState extends State<_PulsingLoader>
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
-  static const routeName = '/';
+  static const routeName = '/splash';
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -63,23 +66,22 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _textFadeAnimation;
+  late final AnimationController _controller;
+  late final Animation<double> _fadeAnimation;
+  late final Animation<double> _textFadeAnimation;
+
   Timer? _navigationTimer;
   bool _hasStartedNavigation = false;
 
   @override
   void initState() {
     super.initState();
-    
-    // Initialize animation controller
+
     _controller = AnimationController(
-      duration: Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
 
-    // Fade animation for text
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
@@ -87,26 +89,25 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
 
-    // Text fade animation
     _textFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: Interval(0.4, 1.0, curve: Curves.easeIn),
+        curve: const Interval(0.4, 1.0, curve: Curves.easeIn),
       ),
     );
 
-    // Start animations
     _controller.forward();
   }
 
   void _startNavigation() {
     if (_hasStartedNavigation) return;
     _hasStartedNavigation = true;
-    
-    _navigationTimer = Timer(Duration(milliseconds: 2500), () {
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, LoginScreen.routeName);
-      }
+
+    _navigationTimer = Timer(const Duration(milliseconds: 2500), () {
+      if (!mounted) return;
+
+      // ✅ Go to AuthGate (which decides Login vs MainNavigation)
+      Navigator.pushReplacementNamed(context, AuthGate.routeName);
     });
   }
 
@@ -119,7 +120,6 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Start navigation after first build (only once)
     if (!_hasStartedNavigation) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && !_hasStartedNavigation) {
@@ -127,21 +127,19 @@ class _SplashScreenState extends State<SplashScreen>
         }
       });
     }
-    
-    // Prevent back button navigation on splash page
+
     return WillPopScope(
-      onWillPop: () async => false, // Prevent going back
+      onWillPop: () async => false,
       child: Scaffold(
-        backgroundColor: Color(0xFF2196F3), // Vibrant blue background
+        backgroundColor: const Color(0xFF2196F3),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Simple icon placeholder
               FadeTransition(
                 opacity: _fadeAnimation,
                 child: Column(
-                  children: [
+                  children: const [
                     Icon(
                       Icons.shopping_bag,
                       size: 100,
@@ -163,12 +161,11 @@ class _SplashScreenState extends State<SplashScreen>
             ],
           ),
         ),
-        // Loading Indicator at bottom with pulse effect
         bottomNavigationBar: Padding(
-          padding: EdgeInsets.only(bottom: 50),
+          padding: const EdgeInsets.only(bottom: 50),
           child: FadeTransition(
             opacity: _textFadeAnimation,
-            child: _PulsingLoader(),
+            child: const _PulsingLoader(),
           ),
         ),
       ),

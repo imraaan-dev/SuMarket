@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../providers/auth_provider.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    final user = auth.user;
+
+    final displayName = user?.displayName ?? 'Student Name';
+    final email = user?.email ?? 'student@su.edu.tr';
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),
@@ -23,7 +32,10 @@ class ProfileScreen extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 50,
-                    backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    backgroundColor: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withOpacity(0.1),
                     child: Icon(
                       Icons.person,
                       size: 50,
@@ -31,16 +43,16 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Student Name',
-                    style: TextStyle(
+                  Text(
+                    displayName,
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'student@su.edu.tr',
+                    email,
                     style: TextStyle(
                       color: Colors.grey.shade600,
                     ),
@@ -49,7 +61,9 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
           ),
+
           const SizedBox(height: 16),
+
           // Menu Items
           Card(
             shape: RoundedRectangleBorder(
@@ -82,6 +96,32 @@ class ProfileScreen extends StatelessWidget {
               ],
             ),
           ),
+
+          const SizedBox(height: 16),
+
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.logout),
+              label: auth.isLoading
+                  ? const Text('Logging out...')
+                  : const Text('Logout'),
+              onPressed: auth.isLoading
+                  ? null
+                  : () async {
+                await context.read<AuthProvider>().logout();
+              },
+            ),
+          ),
+
+          // Optional: show error (rare on logout, but useful)
+          if (auth.error != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              auth.error!,
+              style: const TextStyle(color: Colors.red),
+            ),
+          ],
         ],
       ),
     );

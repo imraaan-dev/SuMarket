@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../services/firestore_service.dart';
 
 class CreateListingScreen extends StatefulWidget {
   const CreateListingScreen({super.key});
@@ -14,9 +17,12 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
+
   String _selectedCategory = 'Electronics';
   String _selectedCurrency = 'TRY';
   bool _hasDelivery = false;
+
+  bool _isPosting = false;
 
   @override
   void dispose() {
@@ -26,13 +32,17 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     super.dispose();
   }
 
-  void _submit() {
-    if (_formKey.currentState?.validate() ?? false) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Listing saved (mock).')),
-      );
-      Navigator.of(context).pop();
-    } else {
+  double? _parsePrice(String input) {
+    // Allows "12,5" or "12.5"
+    final cleaned = input.trim().replaceAll(',', '.');
+    return double.tryParse(cleaned);
+  }
+
+  Future<void> _submit() async {
+    if (_isPosting) return;
+
+    final isValid = _formKey.currentState?.validate() ?? false;
+    if (!isValid) {
       // Show AlertDialog when validation fails
       showDialog(
         context: context,
@@ -44,15 +54,57 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
             ),
             actions: [
               TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
+                onPressed: () => Navigator.of(context).pop(),
                 child: const Text('OK'),
               ),
             ],
           );
         },
       );
+      return;
+    }
+
+    final price = _parsePrice(_priceController.text);
+    if (price == null || price <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter a valid price greater than 0.')),
+      );
+      return;
+    }
+
+    setState(() => _isPosting = true);
+
+    try {
+      final firestore = context.read<FirestoreService>();
+
+      // ✅ Firestore CREATE
+      await firestore.createListing(
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
+        price: price,
+        category: _selectedCategory,
+        imageUrl: null, // Upload not implemented yet
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Listing posted! (${_selectedCurrency == 'TRY' ? '₺' : r'$'}${price.toStringAsFixed(2)})'
+            '${_hasDelivery ? ' • Delivery available' : ''}',
+          ),
+        ),
+      );
+
+      Navigator.of(context).pop(); // Back to Home; stream updates instantly
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to post listing: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isPosting = false);
     }
   }
 
@@ -70,7 +122,13 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               GestureDetector(
-                onTap: () {},
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Photo upload not implemented yet.'),
+                    ),
+                  );
+                },
                 child: Container(
                   height: 140,
                   decoration: BoxDecoration(
@@ -98,8 +156,10 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                       (category) => ChoiceChip(
                         label: Text(category),
                         selected: _selectedCategory == category,
-                        onSelected: (_) =>
-                            setState(() => _selectedCategory = category),
+                        onSelected: _isPosting
+                            ? null
+                            : (_) =>
+                                setState(() => _selectedCategory = category),
                       ),
                     )
                     .toList(),
@@ -115,11 +175,11 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                   ),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a title';
-                  }
+                  final v = value?.trim() ?? '';
+                  if (v.isEmpty) return 'Please enter a title';
                   return null;
                 },
+                enabled: !_isPosting,
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -134,11 +194,11 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                   ),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a description';
-                  }
+                  final v = value?.trim() ?? '';
+                  if (v.isEmpty) return 'Please enter a description';
                   return null;
                 },
+                enabled: !_isPosting,
               ),
               const SizedBox(height: 16),
               Row(
@@ -155,14 +215,14 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                         ),
                       ),
                       validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Enter a price';
-                        }
-                        if (double.tryParse(value) == null) {
-                          return 'Enter a valid number';
-                        }
+                        final v = value?.trim() ?? '';
+                        if (v.isEmpty) return 'Enter a price';
+                        final p = _parsePrice(v);
+                        if (p == null) return 'Enter a valid number';
+                        if (p <= 0) return 'Price must be greater than 0';
                         return null;
                       },
+                      enabled: !_isPosting,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -172,11 +232,13 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                       DropdownMenuItem(value: 'TRY', child: Text('₺')),
                       DropdownMenuItem(value: 'USD', child: Text(r'$')),
                     ],
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() => _selectedCurrency = value);
-                      }
-                    },
+                    onChanged: _isPosting
+                        ? null
+                        : (value) {
+                            if (value != null) {
+                              setState(() => _selectedCurrency = value);
+                            }
+                          },
                   ),
                 ],
               ),
@@ -184,7 +246,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 value: _hasDelivery,
-                onChanged: (value) => setState(() => _hasDelivery = value),
+                onChanged: _isPosting
+                    ? null
+                    : (value) => setState(() => _hasDelivery = value),
                 title: const Text('Delivery Available'),
                 subtitle: const Text('Offer delivery to buyers'),
               ),
@@ -193,19 +257,28 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Draft saved (mock).')),
-                        );
-                      },
+                      onPressed: _isPosting
+                          ? null
+                          : () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text('Draft saved (mock).')),
+                              );
+                            },
                       child: const Text('Save as Draft'),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _submit,
-                      child: const Text('Post Listing'),
+                      onPressed: _isPosting ? null : _submit,
+                      child: _isPosting
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Post Listing'),
                     ),
                   ),
                 ],

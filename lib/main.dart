@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+
+import 'firebase_options.dart';
+
+// Screens
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/signup_screen.dart';
 import 'screens/create_listing_screen.dart';
@@ -13,7 +19,18 @@ import 'screens/profile_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/splash_screen.dart';
 
-void main() {
+// Providers / Services
+import 'providers/auth_provider.dart';
+import 'services/firestore_service.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Firebase init required for Req 1 & 2
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(const SuMarketApp());
 }
 
@@ -22,53 +39,100 @@ class SuMarketApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'SU Market',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1E88E5),
-          brightness: Brightness.light,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AuthProvider>(
+          create: (_) => AuthProvider(),
         ),
-        useMaterial3: true,
-        textTheme: GoogleFonts.poppinsTextTheme(),
-      ),
-      initialRoute: SplashScreen.routeName,
-      routes: {
-        SplashScreen.routeName: (_) => const SplashScreen(),
-        LoginScreen.routeName: (_) => const LoginScreen(),
-        SignUpScreen.routeName: (_) => const SignUpScreen(),
-        MainNavigation.routeName: (_) => const MainNavigation(),
-        CreateListingScreen.routeName: (_) => const CreateListingScreen(),
-        SettingsScreen.routeName: (_) => const SettingsScreen(),
-        AllMessagesScreen.routeName: (_) => const AllMessagesScreen(),
-      },
-      onGenerateRoute: (settings) {
-        if (settings.name == ListingDetailScreen.routeName) {
-          final args = settings.arguments as ListingDetailArguments;
-          return MaterialPageRoute(
-            builder: (_) => ListingDetailScreen(arguments: args),
-          );
-        }
-        if (settings.name == DirectMessageScreen.routeName) {
-          if (settings.arguments is DirectMessageArguments) {
-            final args = settings.arguments as DirectMessageArguments;
+
+        // ✅ Firestore service provider (Req 2)
+        Provider<FirestoreService>(
+          create: (_) => FirestoreService(),
+        ),
+      ],
+      child: MaterialApp(
+        title: 'SU Market',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF1E88E5),
+            brightness: Brightness.light,
+          ),
+          useMaterial3: true,
+          textTheme: GoogleFonts.poppinsTextTheme(),
+        ),
+
+        // ✅ Use named routing (NO home:)
+        // This avoids the "home + '/'" assertion entirely.
+        initialRoute: SplashScreen.routeName,
+
+        routes: {
+          // ✅ Splash and Gate
+          SplashScreen.routeName: (_) => const SplashScreen(),
+          AuthGate.routeName: (_) => const AuthGate(),
+
+          // Auth screens
+          LoginScreen.routeName: (_) => const LoginScreen(),
+          SignUpScreen.routeName: (_) => const SignUpScreen(),
+
+          // Main app screens
+          MainNavigation.routeName: (_) => const MainNavigation(),
+          CreateListingScreen.routeName: (_) => const CreateListingScreen(),
+          SettingsScreen.routeName: (_) => const SettingsScreen(),
+          AllMessagesScreen.routeName: (_) => const AllMessagesScreen(),
+        },
+        onGenerateRoute: (settings) {
+          if (settings.name == ListingDetailScreen.routeName) {
+            final args = settings.arguments as ListingDetailArguments;
             return MaterialPageRoute(
-              builder: (_) => DirectMessageScreen(arguments: args),
-            );
-          } else if (settings.arguments is Map) {
-            final args = settings.arguments as Map;
-            return MaterialPageRoute(
-              builder: (_) => DirectMessageScreen(
-                name: args['name'] as String?,
-                surname: args['surname'] as String?,
-              ),
+              builder: (_) => ListingDetailScreen(arguments: args),
             );
           }
-        }
-        return null;
-      },
+
+          if (settings.name == DirectMessageScreen.routeName) {
+            if (settings.arguments is DirectMessageArguments) {
+              final args = settings.arguments as DirectMessageArguments;
+              return MaterialPageRoute(
+                builder: (_) => DirectMessageScreen(arguments: args),
+              );
+            } else if (settings.arguments is Map) {
+              final args = settings.arguments as Map;
+              return MaterialPageRoute(
+                builder: (_) => DirectMessageScreen(
+                  name: args['name'] as String?,
+                  surname: args['surname'] as String?,
+                ),
+              );
+            }
+          }
+
+          return null;
+        },
+      ),
     );
+  }
+}
+
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  static const routeName = '/gate';
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+
+    if (auth.isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (auth.user != null) {
+      return const MainNavigation();
+    }
+
+    return const LoginScreen();
   }
 }
 
@@ -84,11 +148,11 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const FavoritesScreen(),
-    const NotificationsScreen(),
-    const ProfileScreen(),
+  final List<Widget> _screens = const [
+    HomeScreen(),
+    FavoritesScreen(),
+    NotificationsScreen(),
+    ProfileScreen(),
   ];
 
   @override
@@ -129,5 +193,3 @@ class _MainNavigationState extends State<MainNavigation> {
     );
   }
 }
-
-
