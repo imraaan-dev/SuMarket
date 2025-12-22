@@ -44,9 +44,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
       password: _passwordController.text,
     );
 
-    // ✅ No Navigator push here.
-    // AuthGate in main.dart will automatically show MainNavigation when sign-up succeeds.
-    // (Later, in Req 2, we’ll store full name into Firestore.)
+    if (mounted && auth.error == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Account created! Please log in.')),
+        );
+        Navigator.of(context).pushReplacementNamed(LoginScreen.routeName);
+      }
+    }
   }
 
   @override
