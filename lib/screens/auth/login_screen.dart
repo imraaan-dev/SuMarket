@@ -49,6 +49,7 @@ class _LoginScreenState extends State<LoginScreen> {
         (route) => false, // Remove all previous routes to prevent back button issues
       );
     }
+  }
 
   @override
   Widget build(BuildContext context) {
