@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../providers/auth_provider.dart';
+import '../providers/theme_provider.dart';
 import 'auth/login_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -9,6 +12,9 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // We watch ThemeProvider for the UI switch state
+    final themeProvider = context.watch<ThemeProvider>();
+    
     final entries = [
       _SettingsItem(
         icon: Icons.person_outline,
@@ -34,6 +40,23 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // Theme Toggle
+          Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: SwitchListTile(
+              secondary: Icon(
+                  themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode),
+              title: const Text('Dark Mode'),
+              value: themeProvider.isDarkMode,
+              onChanged: (value) {
+                themeProvider.toggleTheme();
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+        
           ...entries.map(
             (item) => Card(
               shape: RoundedRectangleBorder(
@@ -51,11 +74,21 @@ class SettingsScreen extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
-              onPressed: () {
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  LoginScreen.routeName,
-                  (route) => false,
-                );
+              onPressed: () async {
+                 // Use AuthProvider for logout
+                 await context.read<AuthProvider>().logout();
+                 
+                 // AuthGate in main.dart will handle navigation automatically
+                 // But strictly, we might want to pop just in case.
+                 // Actually, AuthGate is the parent of MainNavigation.
+                 // If we logout, AuthGate rebuilds and shows LoginScreen.
+                 // So we don't necessarily need to nav manually, 
+                 // but popping SettingsScreen is good practice if we were pushed.
+                 // However, AuthGate will switch the whole tree.
+                 // Let's just pop settings to be clean.
+                 if (context.mounted) {
+                   Navigator.of(context).popUntil((route) => route.isFirst);
+                 }
               },
               child: const Text('Logout'),
             ),
