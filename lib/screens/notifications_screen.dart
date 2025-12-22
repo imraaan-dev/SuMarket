@@ -59,14 +59,14 @@ class NotificationsScreen extends StatelessWidget {
           return ListTile(
             contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
             tileColor: notification.unread
-                ? Theme.of(context).colorScheme.primary.withOpacity(0.06)
+                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.06)
                 : null,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
             leading: CircleAvatar(
               backgroundColor:
-                  Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
               child: Icon(notification.icon,
                   color: Theme.of(context).colorScheme.primary),
             ),

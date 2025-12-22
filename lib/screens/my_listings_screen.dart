@@ -34,6 +34,7 @@ class MyListingsScreen extends StatelessWidget {
     );
 
     if (confirm == true) {
+      if (!context.mounted) return;
       try {
         await context.read<FirestoreService>().deleteListing(listingId);
         if (context.mounted) {
@@ -162,7 +163,7 @@ class MyListingsScreen extends StatelessWidget {
                        icon: Container(
                          padding: const EdgeInsets.all(4),
                          decoration: BoxDecoration(
-                           color: Colors.white.withOpacity(0.8),
+                           color: Colors.white.withValues(alpha: 0.8),
                            shape: BoxShape.circle,
                          ),
                          child: const Icon(Icons.more_vert),

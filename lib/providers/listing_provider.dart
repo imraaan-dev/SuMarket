@@ -79,7 +79,6 @@ class ListingProvider extends ChangeNotifier {
             notifyListeners();
           },
           onError: (e) {
-            print('Favorites stream error: $e');
             _isLoading = false; // Don't block
           }
         );
@@ -95,12 +94,28 @@ class ListingProvider extends ChangeNotifier {
   }
 
   Future<void> toggleFavorite(String listingId) async {
-    // Optimistic update could go here, but real-time stream handles it fast enough
+    // 1. Optimistic Update
+    final isCurrentlyFav = _favoriteIds.contains(listingId);
+    if (isCurrentlyFav) {
+      _favoriteIds.remove(listingId);
+    } else {
+      _favoriteIds.add(listingId);
+    }
+    // Notify listeners immediately so UI updates instantly
+    notifyListeners();
+
+    // 2. Persist to Backend
     try {
       await _firestoreService.toggleFavorite(listingId);
     } catch (e) {
-      // handle error
-      print(e);
+      // Revert on error
+      if (isCurrentlyFav) {
+        _favoriteIds.add(listingId);
+      } else {
+        _favoriteIds.remove(listingId);
+      }
+      _error = "Failed to update favorite: $e";
+      notifyListeners();
     }
   }
   

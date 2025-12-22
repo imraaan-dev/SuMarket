@@ -128,8 +128,8 @@ class _SplashScreenState extends State<SplashScreen>
       });
     }
 
-    return WillPopScope(
-      onWillPop: () async => false,
+    return PopScope(
+      canPop: false,
       child: Scaffold(
         backgroundColor: const Color(0xFF2196F3),
         body: Center(

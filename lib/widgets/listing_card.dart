@@ -94,7 +94,7 @@ class ListingCard extends StatelessWidget {
                                 color: isFav ? Colors.red : Colors.grey,
                               ),
                               onPressed: () {
-                                print('DEBUG: Favorite toggled for ${listing.id}');
+
                                 provider.toggleFavorite(listing.id);
                               },
                             );

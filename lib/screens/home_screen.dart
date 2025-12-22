@@ -3,11 +3,11 @@ import 'package:provider/provider.dart';
 import '../providers/listing_provider.dart';
 
 import '../models/listing.dart';
-import '../services/firestore_service.dart';
+
 import '../widgets/listing_card.dart';
-import '../widgets/category_card.dart';
+
+
 import 'create_listing_screen.dart';
-import 'fridges_screen.dart';
 import 'listing_detail_screen.dart';
 import 'all_messages_screen.dart';
 import 'notifications_screen.dart';
@@ -42,8 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final firestore = context.read<FirestoreService>();
-
+    
     final screenWidth = MediaQuery.of(context).size.width;
     final isTablet = screenWidth > 600;
 
@@ -139,99 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
-              // Categories Section (unchanged)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: isTablet ? 24 : 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Categories',
-                        style: TextStyle(
-                          fontSize: isTablet ? 24 : 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: isTablet ? 16 : 12),
-                      SizedBox(
-                        height: isTablet ? 140 : 120,
-                        child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          children: [
-                            CategoryCard(
-                              title: 'Fridges',
-                              icon: Icons.kitchen,
-                              color: Colors.blue,
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const FridgesScreen(),
-                                  ),
-                                );
-                              },
-                            ),
-                            const SizedBox(width: 12),
-                            CategoryCard(
-                              title: 'Books',
-                              icon: Icons.book,
-                              color: Colors.orange,
-                              onTap: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Books category coming soon.'),
-                                  ),
-                                );
-                              },
-                            ),
-                            const SizedBox(width: 12),
-                            CategoryCard(
-                              title: 'Electronics',
-                              icon: Icons.devices,
-                              color: Colors.purple,
-                              onTap: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Electronics category coming soon.'),
-                                  ),
-                                );
-                              },
-                            ),
-                            const SizedBox(width: 12),
-                            CategoryCard(
-                              title: 'Furniture',
-                              icon: Icons.chair,
-                              color: Colors.brown,
-                              onTap: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Furniture category coming soon.'),
-                                  ),
-                                );
-                              },
-                            ),
-                            const SizedBox(width: 12),
-                            CategoryCard(
-                              title: 'More',
-                              icon: Icons.grid_view,
-                              color: Colors.grey,
-                              onTap: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('More categories coming soon.'),
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-                  ),
-                ),
-              ),
+              // Categories Section Removed
 
               // Listings Section header
               SliverToBoxAdapter(

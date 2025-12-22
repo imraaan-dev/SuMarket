@@ -64,7 +64,7 @@ class AuthProvider extends ChangeNotifier {
     required String email,
     required String password,
   }) async {
-    print('DEBUG: login called for $email');
+
     _setLoading(true);
     _error = null;
 
@@ -73,17 +73,17 @@ class AuthProvider extends ChangeNotifier {
         email: email.trim(),
         password: password,
       );
-      print('DEBUG: signIn successful, user: ${credential.user?.uid}');
+
       _user = credential.user;
       notifyListeners();
     } on FirebaseAuthException catch (e) {
-      print('DEBUG: signIn error: $e');
+
       _error = _friendlyAuthError(e);
     } catch (e) {
-      print('DEBUG: signIn general error: $e');
+
       _error = _friendlyGeneralError(e);
     } finally {
-      print('DEBUG: login finally block');
+
       _setLoading(false);
     }
   }

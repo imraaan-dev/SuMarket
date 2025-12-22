@@ -103,7 +103,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
-                    value: category,
+                    initialValue: category,
                     decoration: const InputDecoration(
                       labelText: 'Category',
                       border: OutlineInputBorder(),
@@ -147,6 +147,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     if (ok != true) return;
 
     final newPrice = parsePrice(priceController.text) ?? listing.price;
+
+    if (!mounted) return;
 
     setState(() => _isWorking = true);
     try {
@@ -200,6 +202,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     );
 
     if (confirm != true) return;
+
+    if (!mounted) return;
 
     setState(() => _isWorking = true);
     try {
@@ -258,9 +262,9 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 // Image area (network if available, else placeholder)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(20),
-                  child: (listing.imageUrl ?? '').trim().isNotEmpty
+                  child: listing.imageUrl.trim().isNotEmpty
                       ? Image.network(
-                          listing.imageUrl!,
+                          listing.imageUrl,
                           height: 220,
                           width: double.infinity,
                           fit: BoxFit.cover,
@@ -342,7 +346,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
           ),
           if (_isWorking)
             Container(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withValues(alpha: 0.2),
               child: const Center(child: CircularProgressIndicator()),
             ),
         ],
