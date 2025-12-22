@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
+import 'favorites_screen.dart';
+import 'my_listings_screen.dart';
+import 'settings_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -75,14 +78,22 @@ class ProfileScreen extends StatelessWidget {
                   leading: const Icon(Icons.favorite_outline),
                   title: const Text('My Favorites'),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () {},
+                  onTap: () {
+                     // Since Favorites is a main tab, we could switch tabs, 
+                     // or just push the screen. Pushing is easier from here.
+                     Navigator.of(context).push(
+                       MaterialPageRoute(builder: (_) => const FavoritesScreen()),
+                     );
+                  },
                 ),
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.sell_outlined),
                   title: const Text('My Listings'),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.of(context).pushNamed(MyListingsScreen.routeName);
+                  },
                 ),
                 const Divider(height: 1),
                 ListTile(
@@ -90,7 +101,7 @@ class ProfileScreen extends StatelessWidget {
                   title: const Text('Settings'),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
-                    Navigator.of(context).pushNamed('/settings');
+                    Navigator.of(context).pushNamed(SettingsScreen.routeName);
                   },
                 ),
               ],
