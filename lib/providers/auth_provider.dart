@@ -79,21 +79,24 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       print('DEBUG: Attempting sign in for $email');
-      await _auth.signInWithEmailAndPassword(
+      final credential = await _auth.signInWithEmailAndPassword(
         email: email.trim(),
         password: password,
       );
       
       // DEBUG:
-      print('DEBUG: Sign in successful. Waiting for stream update.');
+      print('DEBUG: Sign in successful. Forcing state update.');
 
-      // DO NOT manually set _user. Let the stream listener update it.
-      // DO NOT manually set _isLoading = false. Let the stream listener doing it
-      // prevents UI flickering back to login screen while _user is still null.
+      // Update state manually as a fallback in case stream is delayed/swallowed.
+      // This ensures the UI unblocks immediately.
+      if (credential.user != null) {
+        _user = credential.user;
+        _isLoading = false;
+        notifyListeners();
+      }
       
     } on FirebaseAuthException catch (e) {
       _error = _friendlyAuthError(e);
-      // Only stop loading on error. On success, stream handles it.
       _setLoading(false);
     } catch (e) {
       _error = _friendlyGeneralError(e);
