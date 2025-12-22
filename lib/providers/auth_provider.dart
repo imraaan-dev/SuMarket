@@ -69,12 +69,14 @@ class AuthProvider extends ChangeNotifier {
     _error = null;
 
     try {
+      print('DEBUG: Attempting sign in for $email');
       final credential = await _auth.signInWithEmailAndPassword(
         email: email.trim(),
         password: password,
       );
 
       _user = credential.user;
+      print('DEBUG: Sign in successful for user: ${_user?.uid}');
       notifyListeners();
     } on FirebaseAuthException catch (e) {
 

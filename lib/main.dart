@@ -148,16 +148,13 @@ class AuthGate extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
 
-    if (auth.isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
     if (auth.user != null) {
       return const MainNavigation();
     }
 
+    // If we are not authenticated, show LoginScreen.
+    // We do not block with a global loader here to allow LoginScreen
+    // to handle its own loading state (e.g. spinner on button).
     return const LoginScreen();
   }
 }

@@ -57,8 +57,9 @@ class ListingProvider extends ChangeNotifier {
       _listingsSubscription = _firestoreService.streamAllListings().listen(
         (data) {
           _listings = data;
-          // Only set not loading if favorites are also handled or skipped
-          if (_currentUserId == null) _isLoading = false; 
+          // Unblock UI as soon as listings arrive. 
+          // Favorites will update asynchronously when they arrive.
+          _isLoading = false; 
           _error = null;
           notifyListeners();
         },
@@ -75,6 +76,7 @@ class ListingProvider extends ChangeNotifier {
         _favoritesSubscription = _firestoreService.streamFavoriteIds().listen(
           (ids) {
             _favoriteIds = ids;
+            // Also ensure loading is false if favorites arrive first
             _isLoading = false;
             notifyListeners();
           },
