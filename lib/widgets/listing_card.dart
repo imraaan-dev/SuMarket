@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/listing.dart';
+import '../providers/listing_provider.dart';
 
 class ListingCard extends StatelessWidget {
   const ListingCard({
@@ -57,20 +59,48 @@ class ListingCard extends StatelessWidget {
                 ),
                 child: _buildImage(),
               ),
-              SizedBox(width: isTablet ? 20 : 16),
+                SizedBox(width: isTablet ? 20 : 16),
               // Content
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      listing.title,
-                      style: TextStyle(
-                        fontSize: isTablet ? 18 : 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            listing.title,
+                            style: TextStyle(
+                              fontSize: isTablet ? 18 : 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        // ✅ Favorite Icon
+                        Consumer<ListingProvider>(
+                          builder: (context, provider, _) {
+                            final isFav = provider.isFavorite(listing.id);
+                            return IconButton(
+                              iconSize: 24,
+                              // Increase hit area but keep visual size compact if needed
+                              constraints: const BoxConstraints(), 
+                              padding: const EdgeInsets.all(8), // Add padding for touch target
+                              icon: Icon(
+                                isFav ? Icons.favorite : Icons.favorite_border,
+                                color: isFav ? Colors.red : Colors.grey,
+                              ),
+                              onPressed: () {
+                                print('DEBUG: Favorite toggled for ${listing.id}');
+                                provider.toggleFavorite(listing.id);
+                              },
+                            );
+                          },
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 4),
                     Text(
