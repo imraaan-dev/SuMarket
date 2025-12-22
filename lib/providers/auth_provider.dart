@@ -47,13 +47,15 @@ class AuthProvider extends ChangeNotifier {
         email: email.trim(),
         password: password,
       );
-      // _user will be updated by authStateChanges listener
+      // Req: Don't auto-login. Force user to login manually.
+      await _auth.signOut();
+      _user = null; 
+      notifyListeners();
     } on FirebaseAuthException catch (e) {
       _error = _friendlyAuthError(e);
     } catch (e) {
       _error = _friendlyGeneralError(e);
     } finally {
-      // ✅ Always stop loading so UI never gets stuck
       _setLoading(false);
     }
   }
@@ -62,21 +64,26 @@ class AuthProvider extends ChangeNotifier {
     required String email,
     required String password,
   }) async {
+    print('DEBUG: login called for $email');
     _setLoading(true);
     _error = null;
 
     try {
-      await _auth.signInWithEmailAndPassword(
+      final credential = await _auth.signInWithEmailAndPassword(
         email: email.trim(),
         password: password,
       );
-      // _user will be updated by authStateChanges listener
+      print('DEBUG: signIn successful, user: ${credential.user?.uid}');
+      _user = credential.user;
+      notifyListeners();
     } on FirebaseAuthException catch (e) {
+      print('DEBUG: signIn error: $e');
       _error = _friendlyAuthError(e);
     } catch (e) {
+      print('DEBUG: signIn general error: $e');
       _error = _friendlyGeneralError(e);
     } finally {
-      // ✅ Always stop loading so UI never gets stuck
+      print('DEBUG: login finally block');
       _setLoading(false);
     }
   }
