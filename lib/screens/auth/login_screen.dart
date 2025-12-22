@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
-import '../../main.dart'; // For MainNavigation
+import '../../main.dart'; // For AuthGate and MainNavigation
 import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -45,7 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
     // or if this screen was pushed onto the stack.
     if (auth.user != null) {
       Navigator.of(context).pushNamedAndRemoveUntil(
-        MainNavigation.routeName,
+        AuthGate.routeName,
         (route) => false, // Remove all previous routes to prevent back button issues
       );
     }
