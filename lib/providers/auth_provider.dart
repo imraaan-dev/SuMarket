@@ -49,13 +49,22 @@ class AuthProvider extends ChangeNotifier {
       );
       // Req: Don't auto-login. Force user to login manually.
       await _auth.signOut();
-      _user = null; 
-      notifyListeners();
+      
+      // We do not manually set _user = null here.
+      // The stream listener will handle it when signOut completes.
+      
+      // However, since we want to show the Login Screen immediately (and show logic is done),
+      // we can rely on finally block to stop loading.
+      // But if stream update is pending, we might flicker.
+      // Actually, for Sign Up -> Login flow, we WANT to go to Login.
+      // So _user needs to be null.
+      
     } on FirebaseAuthException catch (e) {
       _error = _friendlyAuthError(e);
     } catch (e) {
       _error = _friendlyGeneralError(e);
     } finally {
+      // For SignUp, we always stop loading because we expect to land on Login Screen.
       _setLoading(false);
     }
   }
@@ -70,22 +79,24 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       print('DEBUG: Attempting sign in for $email');
-      final credential = await _auth.signInWithEmailAndPassword(
+      await _auth.signInWithEmailAndPassword(
         email: email.trim(),
         password: password,
       );
+      
+      // DEBUG:
+      print('DEBUG: Sign in successful. Waiting for stream update.');
 
-      _user = credential.user;
-      print('DEBUG: Sign in successful for user: ${_user?.uid}');
-      notifyListeners();
+      // DO NOT manually set _user. Let the stream listener update it.
+      // DO NOT manually set _isLoading = false. Let the stream listener doing it
+      // prevents UI flickering back to login screen while _user is still null.
+      
     } on FirebaseAuthException catch (e) {
-
       _error = _friendlyAuthError(e);
+      // Only stop loading on error. On success, stream handles it.
+      _setLoading(false);
     } catch (e) {
-
       _error = _friendlyGeneralError(e);
-    } finally {
-
       _setLoading(false);
     }
   }
@@ -99,10 +110,10 @@ class AuthProvider extends ChangeNotifier {
       // _user will be updated by authStateChanges listener
     } catch (e) {
       _error = _friendlyGeneralError(e);
-    } finally {
-      // ✅ Always stop loading so UI never gets stuck
+      // On error, we must unlock UI
       _setLoading(false);
     }
+    // On success, stream handles _isLoading = false when null arrives.
   }
 
   void _setLoading(bool value) {
