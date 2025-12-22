@@ -17,11 +17,14 @@ import 'screens/direct_message_screen.dart';
 import 'screens/notifications_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/my_listings_screen.dart';
 import 'screens/splash_screen.dart';
 
 // Providers / Services
 import 'providers/auth_provider.dart';
 import 'services/firestore_service.dart';
+import 'providers/theme_provider.dart';
+import 'providers/listing_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,69 +47,92 @@ class SuMarketApp extends StatelessWidget {
         ChangeNotifierProvider<AuthProvider>(
           create: (_) => AuthProvider(),
         ),
+        ChangeNotifierProvider<ThemeProvider>(
+          create: (_) => ThemeProvider(),
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, ListingProvider>(
+          create: (_) => ListingProvider(),
+          update: (_, auth, listingProvider) =>
+          listingProvider!..updateAuth(auth.user?.uid),
+        ),
 
         // ✅ Firestore service provider (Req 2)
         Provider<FirestoreService>(
           create: (_) => FirestoreService(),
         ),
       ],
-      child: MaterialApp(
-        title: 'SU Market',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF1E88E5),
-            brightness: Brightness.light,
-          ),
-          useMaterial3: true,
-          textTheme: GoogleFonts.poppinsTextTheme(),
-        ),
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          return MaterialApp(
+            title: 'SU Market',
+            debugShowCheckedModeBanner: false,
+            // Simple light/dark theme logic
+            theme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: const Color(0xFF1E88E5),
+                brightness: Brightness.light,
+              ),
+              useMaterial3: true,
+              textTheme: GoogleFonts.poppinsTextTheme(),
+            ),
+            darkTheme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: const Color(0xFF1E88E5),
+                brightness: Brightness.dark,
+              ),
+              useMaterial3: true,
+              textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme),
+            ),
+            themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
 
-        // ✅ Use named routing (NO home:)
-        // This avoids the "home + '/'" assertion entirely.
-        initialRoute: SplashScreen.routeName,
+            // ✅ Use named routing (NO home:)
+            // This avoids the "home + '/'" assertion entirely.
+            initialRoute: SplashScreen.routeName,
 
-        routes: {
-          // ✅ Splash and Gate
-          SplashScreen.routeName: (_) => const SplashScreen(),
-          AuthGate.routeName: (_) => const AuthGate(),
+            routes: {
+              // ✅ Splash and Gate
+              SplashScreen.routeName: (_) => const SplashScreen(),
+              AuthGate.routeName: (_) => const AuthGate(),
 
-          // Auth screens
-          LoginScreen.routeName: (_) => const LoginScreen(),
-          SignUpScreen.routeName: (_) => const SignUpScreen(),
+              // Auth screens
+              LoginScreen.routeName: (_) => const LoginScreen(),
+              SignUpScreen.routeName: (_) => const SignUpScreen(),
 
-          // Main app screens
-          MainNavigation.routeName: (_) => const MainNavigation(),
-          CreateListingScreen.routeName: (_) => const CreateListingScreen(),
-          SettingsScreen.routeName: (_) => const SettingsScreen(),
-          AllMessagesScreen.routeName: (_) => const AllMessagesScreen(),
-        },
-        onGenerateRoute: (settings) {
-          if (settings.name == ListingDetailScreen.routeName) {
-            final args = settings.arguments as ListingDetailArguments;
-            return MaterialPageRoute(
-              builder: (_) => ListingDetailScreen(arguments: args),
-            );
-          }
+              // Main app screens
+              MainNavigation.routeName: (_) => const MainNavigation(),
+              CreateListingScreen.routeName: (_) => const CreateListingScreen(),
+              SettingsScreen.routeName: (_) => const SettingsScreen(),
+              AllMessagesScreen.routeName: (_) => const AllMessagesScreen(),
+              MyListingsScreen.routeName: (_) => const MyListingsScreen(),
+            },
+            onGenerateRoute: (settings) {
+              if (settings.name == ListingDetailScreen.routeName) {
+                final args = settings.arguments as ListingDetailArguments;
+                return MaterialPageRoute(
+                  builder: (_) => ListingDetailScreen(arguments: args),
+                );
+              }
 
-          if (settings.name == DirectMessageScreen.routeName) {
-            if (settings.arguments is DirectMessageArguments) {
-              final args = settings.arguments as DirectMessageArguments;
-              return MaterialPageRoute(
-                builder: (_) => DirectMessageScreen(arguments: args),
-              );
-            } else if (settings.arguments is Map) {
-              final args = settings.arguments as Map;
-              return MaterialPageRoute(
-                builder: (_) => DirectMessageScreen(
-                  name: args['name'] as String?,
-                  surname: args['surname'] as String?,
-                ),
-              );
-            }
-          }
+              if (settings.name == DirectMessageScreen.routeName) {
+                if (settings.arguments is DirectMessageArguments) {
+                  final args = settings.arguments as DirectMessageArguments;
+                  return MaterialPageRoute(
+                    builder: (_) => DirectMessageScreen(arguments: args),
+                  );
+                } else if (settings.arguments is Map) {
+                  final args = settings.arguments as Map;
+                  return MaterialPageRoute(
+                    builder: (_) => DirectMessageScreen(
+                      name: args['name'] as String?,
+                      surname: args['surname'] as String?,
+                    ),
+                  );
+                }
+              }
 
-          return null;
+              return null;
+            },
+          );
         },
       ),
     );
