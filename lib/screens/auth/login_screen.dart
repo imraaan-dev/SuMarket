@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
+import '../../main.dart'; // For MainNavigation
 import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -37,9 +38,17 @@ class _LoginScreenState extends State<LoginScreen> {
       password: _passwordController.text,
     );
 
-    // ✅ No Navigator push here.
-    // AuthGate in main.dart will automatically show MainNavigation when login succeeds.
-  }
+    if (!mounted) return;
+
+    // Explicitly check if login succeeded (user is not null) and navigate.
+    // This handles cases where AuthGate might not rebuild the route immediately
+    // or if this screen was pushed onto the stack.
+    if (auth.user != null) {
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        MainNavigation.routeName,
+        (route) => false, // Remove all previous routes to prevent back button issues
+      );
+    }
 
   @override
   Widget build(BuildContext context) {
