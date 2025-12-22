@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../providers/listing_provider.dart';
 
 import '../models/listing.dart';
 import '../services/firestore_service.dart';
@@ -47,15 +48,15 @@ class _HomeScreenState extends State<HomeScreen> {
     final isTablet = screenWidth > 600;
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      // Remove hardcoded backgroundColor
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
+        // Remove hardcoded backgroundColor
         title: Text(
           'SU Market',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Colors.blue.shade700,
+            color: Theme.of(context).colorScheme.primary,
             fontSize: isTablet ? 24 : 20,
           ),
         ),
@@ -79,27 +80,26 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
 
-      // ✅ Firestore real-time stream
-      body: StreamBuilder<List<Listing>>(
-        stream: firestore.streamAllListings(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
+      // ✅ Using Provider for state management (Req 3 & 8)
+      body: Consumer<ListingProvider>(
+        builder: (context, listingProvider, child) {
+          if (listingProvider.error != null) {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
-                  'Error loading listings:\n${snapshot.error}',
+                  'Error loading listings:\n${listingProvider.error}',
                   textAlign: TextAlign.center,
                 ),
               ),
             );
           }
 
-          if (!snapshot.hasData) {
+          if (listingProvider.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final allListings = snapshot.data!;
+          final allListings = listingProvider.listings;
           final filteredListings = _applySearch(allListings);
 
           return CustomScrollView(
@@ -124,7 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       )
                           : null,
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: Theme.of(context).cardColor,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
