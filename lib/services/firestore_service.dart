@@ -16,6 +16,11 @@ class FirestoreService {
   CollectionReference<Map<String, dynamic>> get _listings =>
       _firestore.collection('listings');
 
+  // We store favorites in: users/{uid}  field: favoriteIds (array)
+  DocumentReference<Map<String, dynamic>> get _myUserDoc {
+    return _firestore.collection('users').doc(_uid);
+  }
+
   String get _uid {
     final user = _auth.currentUser;
     if (user == null) {
@@ -32,14 +37,20 @@ class FirestoreService {
     required String category,
     String? imageUrl,
   }) async {
+    final user = _auth.currentUser;
+    final displayName = user?.displayName ?? 'Anonymous';
+
     final docRef = await _listings.add({
       'title': title,
       'description': description,
       'price': price,
       'category': category,
       'imageUrl': imageUrl,
-      'createdBy': _uid,
-      'createdAt': Timestamp.now(),
+      'sellerId': _uid,
+      'sellerName': displayName,
+      'postedDate': Timestamp.now(),
+      'createdBy': _uid,       // compatibility
+      'createdAt': Timestamp.now(), // compatibility
     });
 
     return docRef.id;
@@ -48,8 +59,8 @@ class FirestoreService {
   /// READ (real-time): current user's listings
   Stream<List<Listing>> streamMyListings() {
     return _listings
-        .where('createdBy', isEqualTo: _uid)
-        .orderBy('createdAt', descending: true)
+        .where('sellerId', isEqualTo: _uid)
+        .orderBy('postedDate', descending: true)
         .snapshots()
         .map((snapshot) =>
         snapshot.docs.map((doc) => Listing.fromDoc(doc)).toList());
@@ -58,7 +69,7 @@ class FirestoreService {
   /// READ (real-time): public marketplace feed
   Stream<List<Listing>> streamAllListings() {
     return _listings
-        .orderBy('createdAt', descending: true)
+        .orderBy('postedDate', descending: true)
         .snapshots()
         .map((snapshot) =>
         snapshot.docs.map((doc) => Listing.fromDoc(doc)).toList());
@@ -89,5 +100,46 @@ class FirestoreService {
   /// DELETE
   Future<void> deleteListing(String listingId) async {
     await _listings.doc(listingId).delete();
+  }
+
+  /// FAVORITES: Stream current user's favorite IDs
+  Stream<List<String>> streamFavoriteIds() {
+    return _myUserDoc.snapshots().map((snapshot) {
+      final data = snapshot.data();
+      if (data == null || !data.containsKey('favoriteIds')) {
+        return [];
+      }
+      return List<String>.from(data['favoriteIds'] as List);
+    });
+  }
+
+  /// FAVORITES: Toggle
+  Future<void> toggleFavorite(String listingId) async {
+    final docRef = _myUserDoc;
+    final snapshot = await docRef.get();
+
+    if (!snapshot.exists) {
+      // Create user doc if not exists
+      await docRef.set({
+        'favoriteIds': [listingId],
+        'email': _auth.currentUser?.email,
+      });
+      return;
+    }
+
+    final data = snapshot.data();
+    final List<dynamic> currentFavs = (data != null && data.containsKey('favoriteIds'))
+        ? data['favoriteIds']
+        : [];
+
+    if (currentFavs.contains(listingId)) {
+      await docRef.update({
+        'favoriteIds': FieldValue.arrayRemove([listingId])
+      });
+    } else {
+      await docRef.update({
+        'favoriteIds': FieldValue.arrayUnion([listingId])
+      });
+    }
   }
 }
