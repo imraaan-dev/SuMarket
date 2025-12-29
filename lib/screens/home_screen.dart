@@ -82,19 +82,21 @@ class _HomeScreenState extends State<HomeScreen> {
       // ✅ Using Provider for state management (Req 3 & 8)
       body: Consumer<ListingProvider>(
         builder: (context, listingProvider, child) {
-          if (listingProvider.error != null) {
+          // Show full-screen error ONLY if we have no data
+          if (listingProvider.error != null && listingProvider.listings.isEmpty) {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
                   'Error loading listings:\n${listingProvider.error}',
                   textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.red),
                 ),
               ),
             );
           }
 
-          if (listingProvider.isLoading) {
+          if (listingProvider.isLoading && listingProvider.listings.isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
 
@@ -139,6 +141,35 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
 
               // Categories Section Removed
+
+              // Error Banner (Non-blocking)
+              if (listingProvider.error != null)
+                SliverToBoxAdapter(
+                  child: Container(
+                    margin: EdgeInsets.symmetric(
+                      horizontal: isTablet ? 24 : 16,
+                      vertical: 8,
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.error_outline, color: Colors.red.shade700),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            listingProvider.error!,
+                            style: TextStyle(color: Colors.red.shade900),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
               // Listings Section header
               SliverToBoxAdapter(
