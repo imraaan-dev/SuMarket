@@ -47,19 +47,21 @@ class ListingProvider extends ChangeNotifier {
     return _listings.where((l) => _favoriteIds.contains(l.id)).toList();
   }
   
+  // Pending operations to prevent stream flicker
+  final Set<String> _pendingAdds = {};
+  final Set<String> _pendingRemoves = {};
+
   void _init() {
     _isLoading = true;
     notifyListeners();
 
     try {
-      // 1. Subscribe to Listings (Public)
+      // 1. Subscribe to Listings
       _listingsSubscription?.cancel();
       _listingsSubscription = _firestoreService.streamAllListings().listen(
         (data) {
           _listings = data;
-          // Unblock UI as soon as listings arrive. 
-          // Favorites will update asynchronously when they arrive.
-          _isLoading = false; 
+          _isLoading = false;
           _error = null;
           notifyListeners();
         },
@@ -70,18 +72,22 @@ class ListingProvider extends ChangeNotifier {
         },
       );
 
-      // 2. Subscribe to Favorites (User specific)
+      // 2. Subscribe to Favorites
       _favoritesSubscription?.cancel();
       if (_currentUserId != null) {
         _favoritesSubscription = _firestoreService.streamFavoriteIds().listen(
           (ids) {
-            _favoriteIds = ids;
-            // Also ensure loading is false if favorites arrive first
+            // MERGE stream data with pending local operations
+            final effectiveSet = ids.toSet();
+            effectiveSet.addAll(_pendingAdds);
+            effectiveSet.removeAll(_pendingRemoves);
+            
+            _favoriteIds = effectiveSet.toList();
             _isLoading = false;
             notifyListeners();
           },
           onError: (e) {
-            _isLoading = false; // Don't block
+            _isLoading = false;
           }
         );
       } else {
@@ -96,25 +102,44 @@ class ListingProvider extends ChangeNotifier {
   }
 
   Future<void> toggleFavorite(String listingId) async {
-    // 1. Optimistic Update
     final isCurrentlyFav = _favoriteIds.contains(listingId);
+    
+    // 1. Optimistic Update requesting
     if (isCurrentlyFav) {
       _favoriteIds.remove(listingId);
+      _pendingRemoves.add(listingId);
+      _pendingAdds.remove(listingId);
     } else {
       _favoriteIds.add(listingId);
+      _pendingAdds.add(listingId);
+      _pendingRemoves.remove(listingId);
     }
-    // Notify listeners immediately so UI updates instantly
     notifyListeners();
 
     // 2. Persist to Backend
     try {
       await _firestoreService.toggleFavorite(listingId);
+      
+      // On success, we can clear the pending flags triggers
+      // (The stream eventually catches up, but we don't need to force-hold it anymore strictly)
+      // Actually, keep them until stream confirms? 
+      // Safer to just clear them now, assuming stream will come soon.
+      // Or better: Let them naturally expire? No, manual clear.
+      
+      if (isCurrentlyFav) {
+         _pendingRemoves.remove(listingId);
+      } else {
+         _pendingAdds.remove(listingId);
+      }
+      
     } catch (e) {
       // Revert on error
       if (isCurrentlyFav) {
         _favoriteIds.add(listingId);
+        _pendingRemoves.remove(listingId);
       } else {
         _favoriteIds.remove(listingId);
+        _pendingAdds.remove(listingId);
       }
       _error = "Failed to update favorite: $e";
       notifyListeners();
