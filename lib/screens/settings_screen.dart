@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
+import '../services/firestore_service.dart';
 
 
 class SettingsScreen extends StatelessWidget {
@@ -37,6 +38,11 @@ class SettingsScreen extends StatelessWidget {
                     if (auth.error != null) {
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(auth.error!)));
                     } else {
+                      // Sync to Firestore listings
+                      final firestore = context.read<FirestoreService>();
+                      if (auth.user != null) {
+                        await firestore.updateUserListingsName(auth.user!.uid, name);
+                      }
                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Username updated!')));
                       Navigator.pop(ctx);
                     }
@@ -51,24 +57,45 @@ class SettingsScreen extends StatelessWidget {
     }
 
     void showUpdatePasswordDialog() {
-      final passController = TextEditingController();
+      final oldPassController = TextEditingController();
+      final newPassController = TextEditingController();
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
           title: const Text('Change Password'),
-          content: TextField(
-            controller: passController,
-            decoration: const InputDecoration(labelText: 'New Password'),
-            obscureText: true,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: oldPassController,
+                decoration: const InputDecoration(labelText: 'Old Password'),
+                obscureText: true,
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: newPassController,
+                decoration: const InputDecoration(labelText: 'New Password'),
+                obscureText: true,
+              ),
+            ],
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
             ElevatedButton(
               onPressed: () async {
-                final pass = passController.text.trim();
-                if (pass.length >= 6) {
+                final oldPass = oldPassController.text.trim();
+                final newPass = newPassController.text.trim();
+                
+                if (oldPass.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Old password is required')),
+                  );
+                  return;
+                }
+
+                if (newPass.length >= 6) {
                   final auth = context.read<AuthProvider>();
-                  await auth.updatePassword(pass);
+                  await auth.updatePassword(oldPass, newPass);
                   if (context.mounted) {
                     if (auth.error != null) {
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(auth.error!)));
@@ -79,7 +106,7 @@ class SettingsScreen extends StatelessWidget {
                   }
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Password must be at least 6 characters')),
+                    const SnackBar(content: Text('New password must be at least 6 characters')),
                   );
                 }
               },
