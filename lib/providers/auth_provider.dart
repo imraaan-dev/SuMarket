@@ -124,6 +124,39 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateDisplayName(String newName) async {
+    _setLoading(true);
+    _error = null;
+    try {
+      await _user?.updateDisplayName(newName);
+      await _user?.reload();
+      _user = _auth.currentUser;
+      notifyListeners();
+    } on FirebaseAuthException catch (e) {
+      _error = _friendlyAuthError(e);
+    } catch (e) {
+      _error = _friendlyGeneralError(e);
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> updatePassword(String newPassword) async {
+    _setLoading(true);
+    _error = null;
+    try {
+      if (_user == null) throw Exception('No user is currently signed in.');
+      await _user?.updatePassword(newPassword);
+      notifyListeners();
+    } on FirebaseAuthException catch (e) {
+      _error = _friendlyAuthError(e);
+    } catch (e) {
+      _error = _friendlyGeneralError(e);
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   String _friendlyAuthError(FirebaseAuthException e) {
     switch (e.code) {
       case 'invalid-email':
@@ -142,6 +175,8 @@ class AuthProvider extends ChangeNotifier {
         return 'Email/password sign-in is not enabled in Firebase.';
       case 'too-many-requests':
         return 'Too many attempts. Please try again later.';
+      case 'requires-recent-login':
+        return 'Security sensitive action. Please log out and sign in again to continue.';
       default:
         return e.message ?? 'Authentication error. Please try again.';
     }
