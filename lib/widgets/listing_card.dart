@@ -159,7 +159,9 @@ class ListingCard extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          listing.sellerName,
+                          listing.sellerName.trim().toLowerCase() == 'anonymous' || listing.sellerName.trim().isEmpty
+                              ? 'Student'
+                              : listing.sellerName,
                           style: TextStyle(
                             fontSize: isTablet ? 13 : 12,
                             color: Colors.grey.shade600,
