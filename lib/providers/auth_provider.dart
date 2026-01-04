@@ -141,11 +141,22 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> updatePassword(String newPassword) async {
+  Future<void> updatePassword(String oldPassword, String newPassword) async {
     _setLoading(true);
     _error = null;
     try {
       if (_user == null) throw Exception('No user is currently signed in.');
+      
+      // Re-authenticate user before updating password
+      final email = _user?.email;
+      if (email == null) throw Exception('User email not found.');
+      
+      AuthCredential credential = EmailAuthProvider.credential(
+        email: email,
+        password: oldPassword,
+      );
+      
+      await _user?.reauthenticateWithCredential(credential);
       await _user?.updatePassword(newPassword);
       notifyListeners();
     } on FirebaseAuthException catch (e) {
