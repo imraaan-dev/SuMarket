@@ -321,6 +321,13 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                       ),
                   ],
                 ),
+                Row(
+                  children: [
+                    Icon(Icons.person_outline, color: Colors.grey.shade600),
+                    const SizedBox(width: 8),
+                    Text('Seller: ${listing.sellerName.trim().toLowerCase() == 'anonymous' || listing.sellerName.trim().isEmpty ? 'Student' : listing.sellerName}'),
+                  ],
+                ),
 
                 const SizedBox(height: 24),
 
@@ -344,8 +351,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                         DirectMessageScreen.routeName,
                         arguments: DirectMessageArguments(
                           listingTitle: listing.title,
-                          sellerName:
-                              'Seller', // we don’t store sellerName in Firestore yet
+                          sellerName: listing.sellerName,
                         ),
                       );
                     },
