@@ -5,52 +5,13 @@ import '../providers/auth_provider.dart';
 import '../providers/listing_provider.dart';
 import '../services/firestore_service.dart';
 import '../widgets/listing_card.dart';
-import 'create_listing_screen.dart'; // For editing
+import 'create_listing_screen.dart';
 import 'listing_detail_screen.dart';
 
 class MyListingsScreen extends StatelessWidget {
   const MyListingsScreen({super.key});
 
   static const routeName = '/my-listings';
-
-  Future<void> _deleteListing(BuildContext context, String listingId) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Listing'),
-        content: const Text('Are you sure you want to delete this listing?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      if (!context.mounted) return;
-      try {
-        await context.read<FirestoreService>().deleteListing(listingId);
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Listing deleted successfully')),
-          );
-        }
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error deleting: $e')),
-          );
-        }
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -111,66 +72,14 @@ class MyListingsScreen extends StatelessWidget {
               // The custom ListingCard doesn't support extra actions easily.
               // Let's use an InkWell structure.
               
-              return Stack(
-                children: [
-                   ListingCard(
-                     listing: listing, 
-                     onTap: () {
-                        // Open Edit instead of Detail? Or Detail with Edit option?
-                        // Let's open Detail.
-                        Navigator.of(context).pushNamed(
-                          ListingDetailScreen.routeName,
-                          arguments: ListingDetailArguments(listing: listing),
-                        );
-                     }
-                   ),
-                   Positioned(
-                     top: 16,
-                     right: 24, // Adjust for padding in ListingCard
-                     child: PopupMenuButton<String>(
-                       onSelected: (value) {
-                         if (value == 'edit') {
-                           Navigator.of(context).pushNamed(
-                             CreateListingScreen.routeName, // Reusing create screen for edit
-                             arguments: listing, // Pass listing to edit
-                           );
-                         } else if (value == 'delete') {
-                           _deleteListing(context, listing.id);
-                         }
-                       },
-                       itemBuilder: (context) => [
-                         const PopupMenuItem(
-                           value: 'edit',
-                           child: Row(
-                             children: [
-                               Icon(Icons.edit, color: Colors.blue),
-                               SizedBox(width: 8),
-                               Text('Edit'),
-                             ],
-                           ),
-                         ),
-                         const PopupMenuItem(
-                           value: 'delete',
-                           child: Row(
-                             children: [
-                               Icon(Icons.delete, color: Colors.red),
-                               SizedBox(width: 8),
-                               Text('Delete'),
-                             ],
-                           ),
-                         ),
-                       ],
-                       icon: Container(
-                         padding: const EdgeInsets.all(4),
-                         decoration: BoxDecoration(
-                           color: Colors.white.withValues(alpha: 0.8),
-                           shape: BoxShape.circle,
-                         ),
-                         child: const Icon(Icons.more_vert),
-                       ),
-                     ),
-                   ),
-                ],
+              return ListingCard(
+                listing: listing,
+                onTap: () {
+                  Navigator.of(context).pushNamed(
+                    ListingDetailScreen.routeName,
+                    arguments: ListingDetailArguments(listing: listing),
+                  );
+                },
               );
             },
           );
