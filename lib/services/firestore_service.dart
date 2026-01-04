@@ -101,6 +101,18 @@ class FirestoreService {
     await _listings.doc(listingId).update(updateData);
   }
 
+  /// UPDATE: Sync username across all user listings
+  Future<void> updateUserListingsName(String uid, String newName) async {
+    final snapshots = await _listings.where('sellerId', isEqualTo: uid).get();
+    if (snapshots.docs.isEmpty) return;
+
+    final batch = _firestore.batch();
+    for (var doc in snapshots.docs) {
+      batch.update(doc.reference, {'sellerName': newName});
+    }
+    await batch.commit();
+  }
+
   /// DELETE
   Future<void> deleteListing(String listingId) async {
     await _listings.doc(listingId).delete();
