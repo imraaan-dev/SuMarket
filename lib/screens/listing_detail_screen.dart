@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/listing.dart';
 import '../services/firestore_service.dart';
 import 'direct_message_screen.dart';
+import '../providers/listing_provider.dart';
 
 class ListingDetailArguments {
   ListingDetailArguments({required this.listing});
@@ -234,9 +235,19 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
       appBar: AppBar(
         title: const Text('Listing'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.favorite_border),
-            onPressed: () {},
+          Consumer<ListingProvider>(
+            builder: (context, provider, _) {
+              final isFav = provider.isFavorite(listing.id);
+              return IconButton(
+                icon: Icon(
+                  isFav ? Icons.favorite : Icons.favorite_border,
+                  color: isFav ? Colors.red : null,
+                ),
+                onPressed: () {
+                  provider.toggleFavorite(listing.id);
+                },
+              );
+            },
           ),
           if (_isOwner) ...[
             IconButton(
