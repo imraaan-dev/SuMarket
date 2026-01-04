@@ -38,7 +38,11 @@ class FirestoreService {
     String? imageUrl,
   }) async {
     final user = _auth.currentUser;
-    final displayName = user?.displayName ?? 'Anonymous';
+    String displayName = user?.displayName ?? '';
+    if (displayName.isEmpty && user?.email != null) {
+      displayName = user!.email!.split('@')[0];
+    }
+    if (displayName.isEmpty) displayName = 'Anonymous';
 
     final docRef = await _listings.add({
       'title': title,
