@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "436422420734",
+    "project_id": "sumarketsu",
+    "storage_bucket": "sumarketsu.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:436422420734:android:2a57ad1d5dd9d94f59ddaf",
+        "android_client_info": {
+          "package_name": "com.example.su_fridges"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyChl6li4-jsNpmPeVtH45mqFNnzwTve9ZM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:436422420734:android:4ba008d1590ae31e59ddaf",
+        "android_client_info": {
+          "package_name": "pubspec.yaml"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyChl6li4-jsNpmPeVtH45mqFNnzwTve9ZM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import '../../main.dart';
+import '../../providers/auth_provider.dart';
 import 'login_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -14,11 +15,14 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
+
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
@@ -29,15 +33,26 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
-  void _submit() {
-    if (_formKey.currentState?.validate() ?? false) {
-      Navigator.of(context)
-          .pushNamedAndRemoveUntil(MainNavigation.routeName, (route) => false);
-    }
+  Future<void> _submit() async {
+    final auth = context.read<AuthProvider>();
+    auth.clearError();
+
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    await auth.signUp(
+      email: _emailController.text,
+      password: _passwordController.text,
+    );
+
+    // ✅ No Navigator push here.
+    // AuthGate in main.dart will automatically show MainNavigation when sign-up succeeds.
+    // (Later, in Req 2, we’ll store full name into Firestore.)
   }
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -55,34 +70,35 @@ class _SignUpScreenState extends State<SignUpScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
+
               _InputField(
                 controller: _nameController,
                 label: 'Full Name',
                 icon: Icons.person_outline,
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your full name';
-                  }
+                  final v = value?.trim() ?? '';
+                  if (v.isEmpty) return 'Please enter your full name';
                   return null;
                 },
               ),
+
               const SizedBox(height: 16),
+
               _InputField(
                 controller: _emailController,
                 label: 'Email',
                 icon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  if (!value.contains('@')) {
-                    return 'Enter a valid email';
-                  }
+                  final v = value?.trim() ?? '';
+                  if (v.isEmpty) return 'Please enter your email';
+                  if (!v.contains('@')) return 'Enter a valid email';
                   return null;
                 },
               ),
+
               const SizedBox(height: 16),
+
               _InputField(
                 controller: _passwordController,
                 label: 'Password',
@@ -94,57 +110,85 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         ? Icons.visibility_off_outlined
                         : Icons.visibility_outlined,
                   ),
-                  onPressed: () =>
-                      setState(() => _obscurePassword = !_obscurePassword),
+                  onPressed: auth.isLoading
+                      ? null
+                      : () => setState(() => _obscurePassword = !_obscurePassword),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please create a password';
-                  }
-                  if (value.length < 6) {
-                    return 'Password must be at least 6 characters';
-                  }
+                  final v = value ?? '';
+                  if (v.isEmpty) return 'Please create a password';
+                  if (v.length < 6) return 'Password must be at least 6 characters';
                   return null;
                 },
               ),
+
               const SizedBox(height: 16),
+
               _InputField(
                 controller: _confirmPasswordController,
                 label: 'Confirm Password',
                 icon: Icons.lock_outline,
-                obscureText: _obscurePassword,
+                obscureText: _obscureConfirmPassword,
+                suffix: IconButton(
+                  icon: Icon(
+                    _obscureConfirmPassword
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                  ),
+                  onPressed: auth.isLoading
+                      ? null
+                      : () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please confirm your password';
-                  }
-                  if (value != _passwordController.text) {
-                    return 'Passwords do not match';
-                  }
+                  final v = value ?? '';
+                  if (v.isEmpty) return 'Please confirm your password';
+                  if (v != _passwordController.text) return 'Passwords do not match';
                   return null;
                 },
               ),
+
+              // ✅ Show firebase/auth error messages
+              if (auth.error != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  auth.error!,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ],
+
               const SizedBox(height: 24),
+
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _submit,
-                  child: const Text('Sign Up'),
+                  onPressed: auth.isLoading ? null : _submit,
+                  child: auth.isLoading
+                      ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                      : const Text('Sign Up'),
                 ),
               ),
+
               const SizedBox(height: 16),
+
               Center(
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text('Already have an account?'),
                     TextButton(
-                      onPressed: () => Navigator.of(context)
+                      onPressed: auth.isLoading
+                          ? null
+                          : () => Navigator.of(context)
                           .pushReplacementNamed(LoginScreen.routeName),
                       child: const Text('Login'),
                     ),
                   ],
                 ),
-              )
+              ),
             ],
           ),
         ),
@@ -190,4 +234,3 @@ class _InputField extends StatelessWidget {
     );
   }
 }
-
