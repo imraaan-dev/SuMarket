@@ -108,6 +108,41 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     }
   }
 
+  Future<void> _saveDraft() async {
+    if (_isPosting) return;
+
+    setState(() => _isPosting = true);
+
+    try {
+      final firestore = context.read<FirestoreService>();
+      final price = _parsePrice(_priceController.text) ?? 0.0;
+
+      await firestore.createListing(
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
+        price: price,
+        category: _selectedCategory,
+        imageUrl: null,
+        isDraft: true,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Draft saved!')),
+      );
+
+      Navigator.of(context).pop();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to save draft: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isPosting = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -257,14 +292,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: _isPosting
-                          ? null
-                          : () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text('Draft saved (mock).')),
-                              );
-                            },
+                      onPressed: _isPosting ? null : _saveDraft,
                       child: const Text('Save as Draft'),
                     ),
                   ),

@@ -11,6 +11,7 @@ import 'create_listing_screen.dart';
 import 'listing_detail_screen.dart';
 import 'all_messages_screen.dart';
 import 'notifications_screen.dart';
+import 'all_listings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -101,7 +102,9 @@ class _HomeScreenState extends State<HomeScreen> {
           }
 
           final allListings = listingProvider.listings;
-          final filteredListings = _applySearch(allListings);
+          final filteredListings = _applySearch(allListings)
+              .where((l) => !l.isDraft)
+              .toList();
 
           return CustomScrollView(
             slivers: [
@@ -187,7 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       TextButton(
                         onPressed: () {
-                          // optional - you can implement a “See All” screen later
+                          Navigator.of(context).pushNamed(AllListingsScreen.routeName);
                         },
                         child: const Text('See All'),
                       ),

@@ -34,6 +34,7 @@ class FirestoreService {
     required double price,
     required String category,
     String? imageUrl,
+    bool isDraft = false,
   }) async {
     final user = _auth.currentUser;
     String displayName = user?.displayName ?? '';
@@ -53,6 +54,7 @@ class FirestoreService {
       'postedDate': Timestamp.now(),
       'createdBy': _uid, // compatibility
       'createdAt': Timestamp.now(), // compatibility
+      'isDraft': isDraft,
     });
 
     return docRef.id;
@@ -89,6 +91,7 @@ class FirestoreService {
     double? price,
     String? category,
     String? imageUrl,
+    bool? isDraft,
   }) async {
     final updateData = <String, dynamic>{};
 
@@ -97,6 +100,7 @@ class FirestoreService {
     if (price != null) updateData['price'] = price;
     if (category != null) updateData['category'] = category;
     if (imageUrl != null) updateData['imageUrl'] = imageUrl;
+    if (isDraft != null) updateData['isDraft'] = isDraft;
 
     if (updateData.isEmpty) return;
 

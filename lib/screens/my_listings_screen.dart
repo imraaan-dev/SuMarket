@@ -26,6 +26,19 @@ class MyListingsScreen extends StatelessWidget {
             return const Center(child: Text('Please log in to view your listings.'));
           }
 
+          if (listingProvider.error != null && listingProvider.listings.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Error: ${listingProvider.error}',
+                  style: const TextStyle(color: Colors.red),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
+          }
+
           final myListings = listingProvider.listings
               .where((l) => l.sellerId == user.uid)
               .toList();

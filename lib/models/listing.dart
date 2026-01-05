@@ -13,6 +13,7 @@ class Listing {
     required this.postedDate,
     required this.hasDelivery,
     required this.isVerified,
+    this.isDraft = false,
   });
 
   final String id;
@@ -26,6 +27,7 @@ class Listing {
   final DateTime postedDate;
   final bool hasDelivery;
   final bool isVerified;
+  final bool isDraft;
 
   /// ✅ Compatibility getters (so older code like listing.createdBy works)
   String get createdBy => sellerId;
@@ -49,13 +51,14 @@ class Listing {
       title: (data['title'] ?? '') as String,
       description: (data['description'] ?? '') as String,
       price: (data['price'] as num?)?.toDouble() ?? 0.0,
-      category: (data['category'] ?? '') as String,
-      sellerName: (data['sellerName'] ?? '') as String,
-      sellerId: ((data['sellerId'] ?? data['createdBy']) ?? '') as String,
+      category: (data['category'] ?? 'General') as String,
+      sellerName: (data['sellerName'] ?? 'Student') as String,
+      sellerId: (data['sellerId'] ?? data['createdBy'] ?? '') as String,
       imageUrl: (data['imageUrl'] ?? '') as String,
-      postedDate: time?.toDate() ?? DateTime.fromMillisecondsSinceEpoch(0),
+      postedDate: time?.toDate() ?? DateTime.now(),
       hasDelivery: (data['hasDelivery'] ?? false) as bool,
       isVerified: (data['isVerified'] ?? false) as bool,
+      isDraft: (data['isDraft'] ?? false) as bool,
     );
   }
 
@@ -81,6 +84,7 @@ class Listing {
       'imageUrl': imageUrl,
       'hasDelivery': hasDelivery,
       'isVerified': isVerified,
+      'isDraft': isDraft,
     };
   }
 }

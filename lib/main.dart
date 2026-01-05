@@ -19,6 +19,7 @@ import 'screens/profile_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/my_listings_screen.dart';
 import 'screens/splash_screen.dart';
+import 'screens/all_listings_screen.dart';
 
 // Providers / Services
 import 'providers/auth_provider.dart';
@@ -106,6 +107,7 @@ class SuMarketApp extends StatelessWidget {
               SettingsScreen.routeName: (_) => const SettingsScreen(),
               AllMessagesScreen.routeName: (_) => const AllMessagesScreen(),
               MyListingsScreen.routeName: (_) => const MyListingsScreen(),
+              AllListingsScreen.routeName: (_) => const AllListingsScreen(),
             },
             onGenerateRoute: (settings) {
               if (settings.name == ListingDetailScreen.routeName) {

@@ -237,6 +237,33 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     }
   }
 
+  Future<void> _publishListing() async {
+    if (!mounted) return;
+
+    setState(() => _isWorking = true);
+    try {
+      final firestore = context.read<FirestoreService>();
+      await firestore.updateListing(
+        listingId: widget.arguments.listing.id,
+        isDraft: false,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Listing published!')));
+
+      Navigator.of(context).pop();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to publish: $e')));
+    } finally {
+      if (mounted) setState(() => _isWorking = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final listing = widget.arguments.listing;
@@ -324,11 +351,23 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                     const SizedBox(width: 8),
                     Text(listing.category),
                     const Spacer(),
-                    if (_isOwner)
-                      Chip(
-                        avatar: const Icon(Icons.verified_user, size: 16),
-                        label: const Text('Your Listing'),
-                      ),
+                    if (_isOwner) ...[
+                      if (listing.isDraft)
+                        ElevatedButton.icon(
+                          onPressed: _isWorking ? null : _publishListing,
+                          icon: const Icon(Icons.publish),
+                          label: const Text('Publish'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green.shade700,
+                            foregroundColor: Colors.white,
+                          ),
+                        )
+                      else
+                        const Chip(
+                          avatar: Icon(Icons.verified_user, size: 16),
+                          label: Text('Your Listing'),
+                        ),
+                    ],
                   ],
                 ),
                 Row(
