@@ -35,10 +35,12 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     final listing = widget.arguments.listing;
 
     final titleController = TextEditingController(text: listing.title);
-    final descriptionController =
-        TextEditingController(text: listing.description);
-    final priceController =
-        TextEditingController(text: listing.price.toString());
+    final descriptionController = TextEditingController(
+      text: listing.description,
+    );
+    final priceController = TextEditingController(
+      text: listing.price.toString(),
+    );
     String category = listing.category.isEmpty ? 'General' : listing.category;
 
     final formKey = GlobalKey<FormState>();
@@ -111,14 +113,22 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                     ),
                     items: const [
                       DropdownMenuItem(
-                          value: 'General', child: Text('General')),
+                        value: 'General',
+                        child: Text('General'),
+                      ),
                       DropdownMenuItem(
-                          value: 'Fridges', child: Text('Fridges')),
+                        value: 'Fridges',
+                        child: Text('Fridges'),
+                      ),
                       DropdownMenuItem(value: 'Books', child: Text('Books')),
                       DropdownMenuItem(
-                          value: 'Electronics', child: Text('Electronics')),
+                        value: 'Electronics',
+                        child: Text('Electronics'),
+                      ),
                       DropdownMenuItem(
-                          value: 'Furniture', child: Text('Furniture')),
+                        value: 'Furniture',
+                        child: Text('Furniture'),
+                      ),
                     ],
                     onChanged: (v) {
                       if (v != null) category = v;
@@ -163,17 +173,17 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
       );
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Listing updated!')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Listing updated!')));
 
       // Pop back to Home; stream updates instantly
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to update: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to update: $e')));
     } finally {
       if (mounted) setState(() => _isWorking = false);
     }
@@ -212,16 +222,16 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
       await firestore.deleteListing(listing.id);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Listing deleted.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Listing deleted.')));
 
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to delete: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to delete: $e')));
     } finally {
       if (mounted) setState(() => _isWorking = false);
     }
@@ -325,7 +335,9 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                   children: [
                     Icon(Icons.person_outline, color: Colors.grey.shade600),
                     const SizedBox(width: 8),
-                    Text('Seller: ${listing.sellerName.trim().toLowerCase() == 'anonymous' || listing.sellerName.trim().isEmpty ? 'Student' : listing.sellerName}'),
+                    Text(
+                      'Seller: ${listing.sellerName.trim().toLowerCase() == 'anonymous' || listing.sellerName.trim().isEmpty ? 'Student' : listing.sellerName}',
+                    ),
                   ],
                 ),
 
@@ -346,14 +358,43 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pushNamed(
-                        DirectMessageScreen.routeName,
-                        arguments: DirectMessageArguments(
+                    onPressed: () async {
+                      if (_isOwner) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('You cannot message yourself'),
+                          ),
+                        );
+                        return;
+                      }
+
+                      try {
+                        final firestore = context.read<FirestoreService>();
+                        final chatId = await firestore.startOrGetChat(
+                          listing.sellerId,
+                          listing.sellerName,
+                          listingId: listing.id,
                           listingTitle: listing.title,
-                          sellerName: listing.sellerName,
-                        ),
-                      );
+                          listingImageUrl: listing.imageUrl,
+                        );
+
+                        if (!context.mounted) return;
+
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => DirectMessageScreen(
+                              chatId: chatId,
+                              otherUserName: listing.sellerName,
+                              otherUserId: listing.sellerId,
+                            ),
+                          ),
+                        );
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Failed to start chat: $e')),
+                        );
+                      }
                     },
                     child: const Text('Message Seller'),
                   ),
@@ -377,20 +418,13 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Colors.blue.shade100,
-            Colors.blue.shade200,
-          ],
+          colors: [Colors.blue.shade100, Colors.blue.shade200],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
       ),
       child: const Center(
-        child: Icon(
-          Icons.image_outlined,
-          size: 80,
-          color: Colors.white,
-        ),
+        child: Icon(Icons.image_outlined, size: 80, color: Colors.white),
       ),
     );
   }

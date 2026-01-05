@@ -1,116 +1,169 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../services/firestore_service.dart';
+import 'direct_message_screen.dart';
 
 class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
 
   static const routeName = '/notifications';
 
-  List<_NotificationItem> get _notifications => [
-        _NotificationItem(
-          title: 'New item added near you',
-          subtitle: 'MacBook Air 2022 - Sabancı University',
-          icon: Icons.local_offer_outlined,
-          timeAgo: '2h ago',
-          unread: true,
-        ),
-        _NotificationItem(
-          title: 'New message',
-          subtitle: 'Someone is interested in your bike',
-          icon: Icons.message_outlined,
-          timeAgo: '5h ago',
-          unread: true,
-        ),
-        _NotificationItem(
-          title: 'Price drop alert',
-          subtitle: 'Engineering Textbooks now ₺250',
-          icon: Icons.price_change_outlined,
-          timeAgo: '1d ago',
-        ),
-        _NotificationItem(
-          title: 'Item sold',
-          subtitle: 'Your Wireless Mouse has been sold',
-          icon: Icons.check_circle_outline,
-          timeAgo: '2d ago',
-        ),
-        _NotificationItem(
-          title: 'Someone liked your item',
-          subtitle: 'Your desk lamp was added to favorites',
-          icon: Icons.favorite_border,
-          timeAgo: '3d ago',
-        ),
-      ];
+  String _formatTimeAgo(DateTime timestamp) {
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
+
+    if (difference.inDays > 7) {
+      return DateFormat('MMM d').format(timestamp);
+    } else if (difference.inDays >= 1) {
+      return '${difference.inDays}d ago';
+    } else if (difference.inHours >= 1) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inMinutes >= 1) {
+      return '${difference.inMinutes}m ago';
+    } else {
+      return 'Just now';
+    }
+  }
+
+  IconData _getIconForType(String type) {
+    switch (type) {
+      case 'favorite':
+        return Icons.favorite_border;
+      case 'message':
+        return Icons.message_outlined;
+      case 'price_drop':
+        return Icons.price_change_outlined;
+      case 'sold':
+        return Icons.check_circle_outline;
+      default:
+        return Icons.notifications_none;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final firestoreService = FirestoreService();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Notifications'),
-        actions: [
-          TextButton(
-            onPressed: () {},
-            child: const Text('Mark all as read'),
-          ),
-        ],
+        // actions: [
+        //   TextButton(
+        //     onPressed: () {},
+        //     child: const Text('Mark all as read'),
+        //   ),
+        // ],
       ),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemBuilder: (context, index) {
-          final notification = _notifications[index];
-          return ListTile(
-            contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-            tileColor: notification.unread
-                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.06)
-                : null,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            leading: CircleAvatar(
-              backgroundColor:
-                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-              child: Icon(notification.icon,
-                  color: Theme.of(context).colorScheme.primary),
-            ),
-            title: Text(
-              notification.title,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 4),
-                Text(notification.subtitle),
-                const SizedBox(height: 6),
-                Text(
-                  notification.timeAgo,
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+      body: StreamBuilder<List<Map<String, dynamic>>>(
+        stream: firestoreService.streamNotifications(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+
+          final notifications = snapshot.data ?? [];
+
+          if (notifications.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.notifications_off_outlined,
+                      size: 64, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No notifications yet',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: notifications.length,
+            separatorBuilder: (context, index) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final notification = notifications[index];
+              final timestamp = (notification['timestamp'] as dynamic).toDate();
+              final isRead = notification['isRead'] ?? false;
+              final type = notification['type'] ?? 'system';
+
+              return ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                tileColor: !isRead
+                    ? Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withOpacity(0.06)
+                    : null,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
-              ],
-            ),
-            trailing: notification.unread
-                ? const Icon(Icons.circle, size: 10, color: Colors.blue)
-                : null,
-            onTap: () {},
+                leading: CircleAvatar(
+                  backgroundColor: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withOpacity(0.1),
+                  child: Icon(_getIconForType(type),
+                      color: Theme.of(context).colorScheme.primary),
+                ),
+                title: Text(
+                  notification['title'] ?? '',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 4),
+                    Text(notification['body'] ?? ''),
+                    const SizedBox(height: 6),
+                    Text(
+                      _formatTimeAgo(timestamp),
+                      style:
+                          TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                    ),
+                  ],
+                ),
+                trailing: !isRead
+                    ? const Icon(Icons.circle, size: 10, color: Colors.blue)
+                    : null,
+                onTap: () {
+                  if (!isRead) {
+                    firestoreService.markNotificationAsRead(notification['id']);
+                  }
+
+                  if (type == 'message' &&
+                      notification['relatedItemId'] != null) {
+                    final chatId = notification['relatedItemId'] as String;
+                    final otherUserId = notification['senderId'] as String?;
+                    final otherUserName = notification['senderName'] as String?;
+
+                    if (otherUserId != null && otherUserName != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DirectMessageScreen(
+                            chatId: chatId,
+                            otherUserName: otherUserName,
+                            otherUserId: otherUserId,
+                          ),
+                        ),
+                      );
+                    }
+                  }
+                },
+              );
+            },
           );
         },
-        separatorBuilder: (context, index) => const SizedBox(height: 12),
-        itemCount: _notifications.length,
       ),
     );
   }
-}
-
-class _NotificationItem {
-  _NotificationItem({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.timeAgo,
-    this.unread = false,
-  });
-
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final String timeAgo;
-  final bool unread;
 }

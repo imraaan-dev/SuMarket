@@ -5,10 +5,10 @@ import '../services/firestore_service.dart';
 
 class ListingProvider extends ChangeNotifier {
   final FirestoreService _firestoreService = FirestoreService();
-  
+
   List<Listing> _listings = [];
   List<String> _favoriteIds = [];
-  
+
   bool _isLoading = true;
   String? _error;
 
@@ -19,7 +19,7 @@ class ListingProvider extends ChangeNotifier {
   String? _currentUserId;
 
   ListingProvider() {
-    _init(); 
+    _init();
   }
 
   /// Called by ProxyProvider when AuthProvider changes
@@ -46,7 +46,7 @@ class ListingProvider extends ChangeNotifier {
   List<Listing> get myFavorites {
     return _listings.where((l) => _favoriteIds.contains(l.id)).toList();
   }
-  
+
   // Pending operations to prevent stream flicker
   final Set<String> _pendingAdds = {};
   final Set<String> _pendingRemoves = {};
@@ -75,25 +75,22 @@ class ListingProvider extends ChangeNotifier {
       // 2. Subscribe to Favorites
       _favoritesSubscription?.cancel();
       if (_currentUserId != null) {
-        _favoritesSubscription = _firestoreService.streamFavoriteIds().listen(
-          (ids) {
-            // MERGE stream data with pending local operations
-            final effectiveSet = ids.toSet();
-            effectiveSet.addAll(_pendingAdds);
-            effectiveSet.removeAll(_pendingRemoves);
-            
-            _favoriteIds = effectiveSet.toList();
-            _isLoading = false;
-            notifyListeners();
-          },
-          onError: (e) {
-            _isLoading = false;
-          }
-        );
+        _favoritesSubscription =
+            _firestoreService.streamFavoriteIds().listen((ids) {
+          // MERGE stream data with pending local operations
+          final effectiveSet = ids.toSet();
+          effectiveSet.addAll(_pendingAdds);
+          effectiveSet.removeAll(_pendingRemoves);
+
+          _favoriteIds = effectiveSet.toList();
+          _isLoading = false;
+          notifyListeners();
+        }, onError: (e) {
+          _isLoading = false;
+        });
       } else {
         _favoriteIds = [];
       }
-
     } catch (e) {
       _error = e.toString();
       _isLoading = false;
@@ -103,7 +100,7 @@ class ListingProvider extends ChangeNotifier {
 
   Future<void> toggleFavorite(String listingId) async {
     final isCurrentlyFav = _favoriteIds.contains(listingId);
-    
+
     // 1. Optimistic Update requesting
     if (isCurrentlyFav) {
       _favoriteIds.remove(listingId);
@@ -119,19 +116,54 @@ class ListingProvider extends ChangeNotifier {
     // 2. Persist to Backend
     try {
       await _firestoreService.toggleFavorite(listingId);
-      
+
+      // Send notification if we just added a favorite
+      if (!isCurrentlyFav) {
+        // Find listing to get seller info
+        final listing = _listings.firstWhere(
+          (l) => l.id == listingId,
+          orElse: () => Listing(
+            id: '',
+            title: 'Unknown Item',
+            description: '',
+            price: 0,
+            category: '',
+            sellerName: '',
+            sellerId: '',
+            imageUrl: '',
+            postedDate: DateTime.now(),
+            hasDelivery: false,
+            isVerified: false,
+          ),
+        );
+
+        if (listing.sellerId.isNotEmpty && listing.sellerId != _currentUserId) {
+          try {
+            await _firestoreService.createNotification(
+              userId: listing.sellerId,
+              title: 'Someone liked your item',
+              body: '${listing.title} was added to favorites',
+              type: 'favorite',
+              relatedItemId: listingId,
+            );
+          } catch (e) {
+            // Ignore notification errors (e.g. permission denied) so we don't revert the favorite
+            debugPrint('Failed to send notification: $e');
+          }
+        }
+      }
+
       // On success, we can clear the pending flags triggers
       // (The stream eventually catches up, but we don't need to force-hold it anymore strictly)
-      // Actually, keep them until stream confirms? 
+      // Actually, keep them until stream confirms?
       // Safer to just clear them now, assuming stream will come soon.
       // Or better: Let them naturally expire? No, manual clear.
-      
+
       if (isCurrentlyFav) {
-         _pendingRemoves.remove(listingId);
+        _pendingRemoves.remove(listingId);
       } else {
-         _pendingAdds.remove(listingId);
+        _pendingAdds.remove(listingId);
       }
-      
     } catch (e) {
       // Revert on error
       if (isCurrentlyFav) {
@@ -145,7 +177,7 @@ class ListingProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
-  
+
   Future<void> refresh() async {
     await _listingsSubscription?.cancel();
     await _favoritesSubscription?.cancel();

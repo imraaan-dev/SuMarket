@@ -4,11 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/listing.dart';
 
 class FirestoreService {
-  FirestoreService({
-    FirebaseFirestore? firestore,
-    FirebaseAuth? auth,
-  })  : _firestore = firestore ?? FirebaseFirestore.instance,
-        _auth = auth ?? FirebaseAuth.instance;
+  FirestoreService({FirebaseFirestore? firestore, FirebaseAuth? auth})
+    : _firestore = firestore ?? FirebaseFirestore.instance,
+      _auth = auth ?? FirebaseAuth.instance;
 
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
@@ -53,7 +51,7 @@ class FirestoreService {
       'sellerId': _uid,
       'sellerName': displayName,
       'postedDate': Timestamp.now(),
-      'createdBy': _uid,       // compatibility
+      'createdBy': _uid, // compatibility
       'createdAt': Timestamp.now(), // compatibility
     });
 
@@ -66,8 +64,10 @@ class FirestoreService {
         .where('sellerId', isEqualTo: _uid)
         .orderBy('postedDate', descending: true)
         .snapshots()
-        .map((snapshot) =>
-        snapshot.docs.map((doc) => Listing.fromDoc(doc)).toList());
+        .map(
+          (snapshot) =>
+              snapshot.docs.map((doc) => Listing.fromDoc(doc)).toList(),
+        );
   }
 
   /// READ (real-time): public marketplace feed
@@ -75,8 +75,10 @@ class FirestoreService {
     return _listings
         .orderBy('postedDate', descending: true)
         .snapshots()
-        .map((snapshot) =>
-        snapshot.docs.map((doc) => Listing.fromDoc(doc)).toList());
+        .map(
+          (snapshot) =>
+              snapshot.docs.map((doc) => Listing.fromDoc(doc)).toList(),
+        );
   }
 
   /// UPDATE
@@ -144,18 +146,196 @@ class FirestoreService {
     }
 
     final data = snapshot.data();
-    final List<dynamic> currentFavs = (data != null && data.containsKey('favoriteIds'))
+    final List<dynamic> currentFavs =
+        (data != null && data.containsKey('favoriteIds'))
         ? data['favoriteIds']
         : [];
 
     if (currentFavs.contains(listingId)) {
       await docRef.update({
-        'favoriteIds': FieldValue.arrayRemove([listingId])
+        'favoriteIds': FieldValue.arrayRemove([listingId]),
       });
     } else {
       await docRef.update({
-        'favoriteIds': FieldValue.arrayUnion([listingId])
+        'favoriteIds': FieldValue.arrayUnion([listingId]),
       });
     }
+  }
+
+  /// NOTIFICATIONS
+  Future<void> createNotification({
+    required String userId,
+    required String title,
+    required String body,
+    required String type,
+    String? relatedItemId,
+    Map<String, dynamic>? extraData,
+  }) async {
+    await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('notifications')
+        .add({
+          'title': title,
+          'body': body,
+          'timestamp': FieldValue.serverTimestamp(),
+          'isRead': false,
+          'type': type,
+          'relatedItemId': relatedItemId,
+          if (extraData != null) ...extraData,
+        });
+  }
+
+  Stream<List<Map<String, dynamic>>> streamNotifications() {
+    return _myUserDoc
+        .collection('notifications')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) {
+            final data = doc.data();
+            data['id'] = doc.id;
+            // Fix for serverTimestamp being null immediately after write
+            if (data['timestamp'] == null) {
+              data['timestamp'] = Timestamp.now();
+            }
+            return data;
+          }).toList();
+        });
+  }
+
+  Future<void> markNotificationAsRead(String notificationId) async {
+    await _myUserDoc.collection('notifications').doc(notificationId).update({
+      'isRead': true,
+    });
+  }
+
+  /// MESSAGING
+
+  // Start or get existing chat room with another user for a specific listing
+  Future<String> startOrGetChat(
+    String otherUserId,
+    String otherUserName, {
+    String? listingId,
+    String? listingTitle,
+    String? listingImageUrl,
+  }) async {
+    final myUid = _uid;
+    final myName =
+        _auth.currentUser?.displayName ?? _auth.currentUser?.email ?? 'User';
+
+    // Query chat_rooms where participants array contains myUid AND optionally matches listingId
+    var queryRef = _firestore
+        .collection('chat_rooms')
+        .where('participants', arrayContains: myUid);
+
+    if (listingId != null) {
+      queryRef = queryRef.where('listingId', isEqualTo: listingId);
+    }
+
+    final query = await queryRef.get();
+
+    for (var doc in query.docs) {
+      final participants = List<String>.from(doc['participants']);
+      if (participants.contains(otherUserId)) {
+        return doc.id;
+      }
+    }
+
+    // Create new chat room
+    final docRef = await _firestore.collection('chat_rooms').add({
+      'participants': [myUid, otherUserId],
+      'participantNames': {myUid: myName, otherUserId: otherUserName},
+      'lastMessage': '',
+      'lastMessageTime': FieldValue.serverTimestamp(),
+      'createdBy': myUid,
+      'listingId': listingId,
+      'listingTitle': listingTitle,
+      'listingImageUrl': listingImageUrl,
+    });
+
+    return docRef.id;
+  }
+
+  Future<void> sendMessage({
+    required String chatId,
+    required String text,
+    required String
+    otherUserId, // To update notification or unread count if needed
+  }) async {
+    final myUid = _uid;
+
+    // Add message to subcollection
+    await _firestore
+        .collection('chat_rooms')
+        .doc(chatId)
+        .collection('messages')
+        .add({
+          'senderId': myUid,
+          'text': text,
+          'timestamp': FieldValue.serverTimestamp(),
+          'isRead': false,
+        });
+
+    // Update last message in chat room
+    await _firestore.collection('chat_rooms').doc(chatId).update({
+      'lastMessage': text,
+      'lastMessageTime': FieldValue.serverTimestamp(),
+    });
+
+    // Optional: Send notification to other user (using the logic we just added!)
+    // But let's keep it simple for now, as messages usually have their own listeners.
+    if (otherUserId != myUid) {
+      try {
+        final myName = _auth.currentUser?.displayName ??
+            _auth.currentUser?.email?.split('@')[0] ??
+            'User';
+        await createNotification(
+          userId: otherUserId,
+          title: 'New Message',
+          body: text,
+          type: 'message',
+          relatedItemId: chatId,
+          extraData: {'senderId': myUid, 'senderName': myName},
+        );
+      } catch (e) {
+        // ignore
+      }
+    }
+  }
+
+  Stream<List<Map<String, dynamic>>> streamChatRooms() {
+    return _firestore
+        .collection('chat_rooms')
+        .where('participants', arrayContains: _uid)
+        .orderBy('lastMessageTime', descending: true)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) {
+            final data = doc.data();
+            data['id'] = doc.id;
+            return data;
+          }).toList();
+        });
+  }
+
+  Stream<List<Map<String, dynamic>>> streamMessages(String chatId) {
+    return _firestore
+        .collection('chat_rooms')
+        .doc(chatId)
+        .collection('messages')
+        .orderBy('timestamp', descending: false)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) {
+            final data = doc.data();
+            data['id'] = doc.id;
+            // Fix for serverTimestamp
+            if (data['timestamp'] == null) {
+              data['timestamp'] = Timestamp.now();
+            }
+            return data;
+          }).toList();
+        });
   }
 }

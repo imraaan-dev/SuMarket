@@ -53,7 +53,7 @@ class SuMarketApp extends StatelessWidget {
         ChangeNotifierProxyProvider<AuthProvider, ListingProvider>(
           create: (_) => ListingProvider(),
           update: (_, auth, listingProvider) =>
-          listingProvider!..updateAuth(auth.user?.uid),
+              listingProvider!..updateAuth(auth.user?.uid),
         ),
 
         // ✅ Firestore service provider (Req 2)
@@ -81,9 +81,11 @@ class SuMarketApp extends StatelessWidget {
                 brightness: Brightness.dark,
               ),
               useMaterial3: true,
-              textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme),
+              textTheme:
+                  GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme),
             ),
-            themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+            themeMode:
+                themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
 
             // ✅ Use named routing (NO home:)
             // This avoids the "home + '/'" assertion entirely.
@@ -113,22 +115,11 @@ class SuMarketApp extends StatelessWidget {
                 );
               }
 
-              if (settings.name == DirectMessageScreen.routeName) {
-                if (settings.arguments is DirectMessageArguments) {
-                  final args = settings.arguments as DirectMessageArguments;
-                  return MaterialPageRoute(
-                    builder: (_) => DirectMessageScreen(arguments: args),
-                  );
-                } else if (settings.arguments is Map) {
-                  final args = settings.arguments as Map;
-                  return MaterialPageRoute(
-                    builder: (_) => DirectMessageScreen(
-                      name: args['name'] as String?,
-                      surname: args['surname'] as String?,
-                    ),
-                  );
-                }
-              }
+//               if (settings.name == DirectMessageScreen.routeName) {
+//                 // Logic removed as we use direct MaterialPageRoute navigation now
+//                 // and DirectMessageArguments class was removed.
+//                 return null;
+//               }
 
               return null;
             },
